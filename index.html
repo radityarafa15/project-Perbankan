@@ -1260,12 +1260,13 @@
               <option value="bulan" selected>Per Bulan (bulan ini)</option>
               <option value="tahun">Per Tahun (tahun ini)</option>
             </select>
+
             <select id="select-format" title="Format file">
-              <select id="select-format" title="Format file">
-            <option value="csv">Format CSV</option>
-            <option value="txt">Format TXT</option>
-            <option value="pdf">Format PDF</option>
+              <option value="csv">Format CSV</option>
+              <option value="txt">Format TXT</option>
+              <option value="pdf">Format PDF</option>
             </select>
+
             <button class="btn btn-outline btn-sm" id="btn-export">
               ⬇ Ekspor Laporan
             </button>
@@ -2955,86 +2956,94 @@
       }
 
       // Handler tombol "Ekspor Laporan": filter data sesuai periode, lalu unduh sesuai format pilihan
-          function buatLaporanPDF(daftar, labelPeriode, mulai, selesai) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      function buatLaporanPDF(daftar, labelPeriode, mulai, selesai) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+        });
 
-      const totalIncome = daftar
-        .filter((t) => t.jenis === "income")
-        .reduce((s, t) => s + t.nominal, 0);
-      const totalExpense = daftar
-        .filter((t) => t.jenis === "expense")
-        .reduce((s, t) => s + t.nominal, 0);
-      const saldo = totalIncome - totalExpense;
+        const totalIncome = daftar
+          .filter((t) => t.jenis === "income")
+          .reduce((s, t) => s + t.nominal, 0);
+        const totalExpense = daftar
+          .filter((t) => t.jenis === "expense")
+          .reduce((s, t) => s + t.nominal, 0);
+        const saldo = totalIncome - totalExpense;
 
-      const opsiTanggal = { day: "2-digit", month: "long", year: "numeric" };
-      const rentang =
-        mulai.toLocaleDateString("id-ID", opsiTanggal) +
-        " - " +
-        selesai.toLocaleDateString("id-ID", opsiTanggal);
+        const opsiTanggal = { day: "2-digit", month: "long", year: "numeric" };
+        const rentang =
+          mulai.toLocaleDateString("id-ID", opsiTanggal) +
+          " - " +
+          selesai.toLocaleDateString("id-ID", opsiTanggal);
 
-      // Header
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text("Laporan Keuangan Pribadi", 14, 18);
+        // Header
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("Laporan Keuangan Pribadi", 14, 18);
 
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Periode: ${labelPeriode} (${rentang})`, 14, 26);
-      doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, 14, 32);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Periode: ${labelPeriode} (${rentang})`, 14, 26);
+        doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, 14, 32);
 
-      // Ringkasan
-      doc.setFont("helvetica", "bold");
-      doc.text("Ringkasan", 14, 42);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Total Pemasukan   : ${formatRupiah(totalIncome)}`, 14, 48);
-      doc.text(`Total Pengeluaran : ${formatRupiah(totalExpense)}`, 14, 54);
-      doc.text(`Saldo Periode     : ${formatRupiah(saldo)}`, 14, 60);
+        // Ringkasan
+        doc.setFont("helvetica", "bold");
+        doc.text("Ringkasan", 14, 42);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Total Pemasukan   : ${formatRupiah(totalIncome)}`, 14, 48);
+        doc.text(`Total Pengeluaran : ${formatRupiah(totalExpense)}`, 14, 54);
+        doc.text(`Saldo Periode     : ${formatRupiah(saldo)}`, 14, 60);
 
-      // Tabel transaksi
-      const rows = daftar.map((t) => [
-        formatTanggal(t.tanggal),
-        t.jenis === "income" ? "Pemasukan" : "Pengeluaran",
-        t.kategori,
-        t.akun,
-        t.deskripsi,
-        (t.jenis === "income" ? "+ " : "- ") + formatRupiah(t.nominal),
-      ]);
+        // Tabel transaksi
+        const rows = daftar.map((t) => [
+          formatTanggal(t.tanggal),
+          t.jenis === "income" ? "Pemasukan" : "Pengeluaran",
+          t.kategori,
+          t.akun,
+          t.deskripsi,
+          (t.jenis === "income" ? "+ " : "- ") + formatRupiah(t.nominal),
+        ]);
 
-      doc.autoTable({
-        startY: 68,
-        head: [["Tanggal", "Jenis", "Kategori", "Akun", "Keterangan", "Nominal"]],
-        body: rows,
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [42, 120, 214], textColor: 255 },
-        columnStyles: {
-          0: { cellWidth: 22 },
-          1: { cellWidth: 22 },
-          2: { cellWidth: 28 },
-          3: { cellWidth: 24 },
-          4: { cellWidth: 50 },
-          5: { cellWidth: 30, halign: "right" },
-        },
-        margin: { left: 14, right: 14 },
-      });
+        doc.autoTable({
+          startY: 68,
+          head: [
+            ["Tanggal", "Jenis", "Kategori", "Akun", "Keterangan", "Nominal"],
+          ],
+          body: rows,
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [42, 120, 214], textColor: 255 },
+          columnStyles: {
+            0: { cellWidth: 22 },
+            1: { cellWidth: 22 },
+            2: { cellWidth: 28 },
+            3: { cellWidth: 24 },
+            4: { cellWidth: 50 },
+            5: { cellWidth: 30, halign: "right" },
+          },
+          margin: { left: 14, right: 14 },
+        });
 
-      // Footer halaman
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Halaman ${i} / ${pageCount}`,
-          doc.internal.pageSize.getWidth() / 2,
-          doc.internal.pageSize.getHeight() - 10,
-          { align: "center" },
+        // Footer halaman
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setTextColor(150);
+          doc.text(
+            `Halaman ${i} / ${pageCount}`,
+            doc.internal.pageSize.getWidth() / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: "center" },
+          );
+        }
+
+        const tanggalFile = hariIniISO();
+        doc.save(
+          `laporan-keuangan-${labelPeriode.toLowerCase().replace(/\s/g, "-")}-${tanggalFile}.pdf`,
         );
       }
-
-      const tanggalFile = hariIniISO();
-      doc.save(`laporan-keuangan-${labelPeriode.toLowerCase().replace(/\s/g, "-")}-${tanggalFile}.pdf`);
-    }
       function eksporLaporan() {
         const periode = document.getElementById("select-periode").value;
         const format = document.getElementById("select-format").value;
