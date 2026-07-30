@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Daftar - SaveMoney{% endblock %}
+{% block body %}
+<main class="auth-page">
+  <section class="auth-card">
+    <div class="brand">💼 SaveMoney</div>
+    <h1>Buat akun baru</h1>
+    <p class="muted">Mulai mencatat pemasukan dan pengeluaran.</p>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Nama lengkap
+        <input name="name" value="{{ form.name }}" required autocomplete="name">
+      </label>
+      <label>Username
+        <input name="username" value="{{ form.username }}" required autocomplete="username">
+      </label>
+      <label>Email
+        <input type="email" name="email" value="{{ form.email }}" required autocomplete="email">
+      </label>
+      <label>Password
+        <input type="password" name="password" minlength="8" required autocomplete="new-password">
+      </label>
+      <label>Konfirmasi password
+        <input type="password" name="confirmation" minlength="8" required autocomplete="new-password">
+      </label>
+      <button class="btn primary" type="submit">Daftar</button>
+    </form>
+    <p class="auth-switch">Sudah punya akun? <a href="{{ url_for('login') }}">Masuk</a></p>
+  </section>
+</main>
+{% endblock %}
