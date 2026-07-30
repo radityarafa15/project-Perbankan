@@ -1414,8 +1414,8 @@
 
     <script>
       /* =========================================================
-   KONFIGURASI & STATE
-   ========================================================= */
+                                    KONFIGURASI & STATE
+                                    ========================================================= */
       const STORAGE_KEY = "catatan_keuangan_transaksi";
       const THEME_KEY = "catatan_keuangan_theme";
       const ANGGARAN_KEY = "catatan_keuangan_anggaran";
@@ -1460,11 +1460,11 @@
       }
 
       /* =========================================================
-   TOAST NOTIFIKASI — pengganti alert() untuk feedback non-kritis
-   (sukses simpan/hapus/ekspor, dll). alert()/confirm() bawaan browser
-   tetap dipakai khusus untuk konfirmasi hapus & kegagalan simpan data,
-   karena keduanya perlu benar-benar menghentikan pengguna sejenak.
-   ========================================================= */
+                                    TOAST NOTIFIKASI — pengganti alert() untuk feedback non-kritis
+                                    (sukses simpan/hapus/ekspor, dll). alert()/confirm() bawaan browser
+                                    tetap dipakai khusus untuk konfirmasi hapus & kegagalan simpan data,
+                                    karena keduanya perlu benar-benar menghentikan pengguna sejenak.
+                                    ========================================================= */
       function tampilkanToast(pesan, jenis = "sukses") {
         const container = document.getElementById("toast-container");
         const toast = document.createElement("div");
@@ -1488,10 +1488,10 @@
       }
 
       /* =========================================================
-   FORMAT NOMINAL SAAT MENGETIK — input-nominal & anggaran-nominal
-   memakai <input type="text"> supaya bisa ditampilkan dengan
-   pemisah ribuan (5.000.000) alih-alih angka polos yang mudah salah baca
-   ========================================================= */
+                                    FORMAT NOMINAL SAAT MENGETIK — input-nominal & anggaran-nominal
+                                    memakai <input type="text"> supaya bisa ditampilkan dengan
+                                    pemisah ribuan (5.000.000) alih-alih angka polos yang mudah salah baca
+                                    ========================================================= */
       function formatAngkaRibuan(digitString) {
         if (!digitString) return "";
         return new Intl.NumberFormat("id-ID").format(Number(digitString));
@@ -1546,7 +1546,7 @@
         }
       }
 
-      let transaksi = muatTransaksi();
+      let transaksi = []; // array berisi semua transaksi
       let chartRingkasan = null;
       let chartTren = null;
       let chartKategori = null;
@@ -1565,15 +1565,32 @@
       const ITEM_PER_HALAMAN = 10;
 
       /* =========================================================
-   FUNGSI PENYIMPANAN DATA (LocalStorage sebagai "database")
-   ========================================================= */
+                                    FUNGSI PENYIMPANAN DATA (LocalStorage sebagai "database")
+                                    ========================================================= */
 
-      // Mengambil seluruh transaksi dari LocalStorage. Mengembalikan array kosong jika belum ada data.
-      function muatTransaksi() {
+      async function muatTransaksi() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
-          const data = raw ? JSON.parse(raw) : [];
-          // Transaksi lama (sebelum fitur kategori/akun ada) belum punya field-field ini
+          if (!raw) return [];
+
+          // Coba baca sebagai data lama (belum terenkripsi)
+          try {
+            const data = JSON.parse(raw);
+            if (Array.isArray(data)) {
+              return data.map((t) => ({
+                ...t,
+                kategori: t.kategori || "Lainnya",
+                akun: t.akun || AKUN_DEFAULT,
+              }));
+            }
+          } catch (_) {}
+
+          // Data sudah terenkripsi
+          if (!encryptionKey) return [];
+          const encrypted = JSON.parse(raw);
+          const data = await decryptData(encrypted, encryptionKey);
+          if (!data || !Array.isArray(data)) return [];
+
           return data.map((t) => ({
             ...t,
             kategori: t.kategori || "Lainnya",
@@ -1585,24 +1602,27 @@
         }
       }
 
-      // Menyimpan array transaksi saat ini ke LocalStorage. Mengembalikan true/false agar
-      // kegagalan (storage penuh, mode privat, dll) tidak membuat data hilang diam-diam.
-      function simpanTransaksi() {
+      async function simpanTransaksi() {
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(transaksi));
+          if (!encryptionKey) {
+            // Fallback (belum login PIN)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(transaksi));
+            return true;
+          }
+
+          const encrypted = await encryptData(transaksi, encryptionKey);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(encrypted));
           return true;
         } catch (err) {
           console.error("Gagal menyimpan transaksi:", err);
-          alert(
-            "Gagal menyimpan perubahan!\n\nPenyimpanan browser mungkin penuh, atau kamu sedang di mode privat/incognito yang membatasi LocalStorage. Perubahan ini hanya ada sementara di tab ini dan bisa hilang saat halaman ditutup.\n\nSegera ekspor Backup (JSON) sebagai cadangan.",
-          );
+          alert("Gagal menyimpan data terenkripsi!");
           return false;
         }
       }
 
       /* =========================================================
-   RENDER: DASHBOARD SALDO
-   ========================================================= */
+                                    RENDER: DASHBOARD SALDO
+                                    ========================================================= */
       function hitungRingkasan(daftar = transaksi) {
         const totalIncome = daftar
           .filter((t) => t.jenis === "income")
@@ -1632,8 +1652,8 @@
       }
 
       /* =========================================================
-   PENCARIAN, FILTER & URUTAN TABEL RIWAYAT
-   ========================================================= */
+                                    PENCARIAN, FILTER & URUTAN TABEL RIWAYAT
+                                    ========================================================= */
 
       // Menyaring transaksi berdasarkan kata kunci keterangan, jenis, kategori, dan akun terpilih
       function terapkanFilter(daftar) {
@@ -1707,12 +1727,12 @@
         const sampaiItem = Math.min(halamanAktif * ITEM_PER_HALAMAN, totalItem);
 
         wrap.innerHTML = `
-    <span>Menampilkan ${dariItem}-${sampaiItem} dari ${totalItem} transaksi</span>
-    <div class="paginasi-tombol">
-      <button type="button" class="btn btn-outline btn-sm" id="btn-halaman-prev" ${halamanAktif <= 1 ? "disabled" : ""}>‹ Sebelumnya</button>
-      <span class="paginasi-angka">Halaman ${halamanAktif} / ${totalHalaman}</span>
-      <button type="button" class="btn btn-outline btn-sm" id="btn-halaman-next" ${halamanAktif >= totalHalaman ? "disabled" : ""}>Berikutnya ›</button>
-    </div>`;
+                                     <span>Menampilkan ${dariItem}-${sampaiItem} dari ${totalItem} transaksi</span>
+                                     <div class="paginasi-tombol">
+                                       <button type="button" class="btn btn-outline btn-sm" id="btn-halaman-prev" ${halamanAktif <= 1 ? "disabled" : ""}>‹ Sebelumnya</button>
+                                       <span class="paginasi-angka">Halaman ${halamanAktif} / ${totalHalaman}</span>
+                                       <button type="button" class="btn btn-outline btn-sm" id="btn-halaman-next" ${halamanAktif >= totalHalaman ? "disabled" : ""}>Berikutnya ›</button>
+                                     </div>`;
 
         const btnPrev = document.getElementById("btn-halaman-prev");
         const btnNext = document.getElementById("btn-halaman-next");
@@ -1729,8 +1749,8 @@
       }
 
       /* =========================================================
-   RENDER: TABEL RIWAYAT TRANSAKSI
-   ========================================================= */
+                                    RENDER: TABEL RIWAYAT TRANSAKSI
+                                    ========================================================= */
       function renderTabel() {
         const tbody = document.getElementById("tabel-riwayat");
         const emptyState = document.getElementById("empty-riwayat");
@@ -1762,20 +1782,20 @@
           const tanda = t.jenis === "income" ? "+" : "-";
 
           tr.innerHTML = `
-      <td class="date">${formatTanggal(t.tanggal)}</td>
-      <td>${escapeHTML(t.deskripsi)}</td>
-      <td>${escapeHTML(t.kategori)}</td>
-      <td>${escapeHTML(t.akun)}</td>
-      <td><span class="badge ${t.jenis}">${labelJenis}</span></td>
-      <td class="amount">${tanda} ${formatRupiah(t.nominal)}</td>
-      <td style="text-align:right; white-space:nowrap;">
-        <button class="edit-btn" data-id="${t.id}" title="Edit transaksi" aria-label="Edit transaksi">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-        </button>
-        <button class="delete-btn" data-id="${t.id}" title="Hapus transaksi" aria-label="Hapus transaksi">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
-        </button>
-      </td>`;
+                                       <td class="date">${formatTanggal(t.tanggal)}</td>
+                                       <td>${escapeHTML(t.deskripsi)}</td>
+                                       <td>${escapeHTML(t.kategori)}</td>
+                                       <td>${escapeHTML(t.akun)}</td>
+                                       <td><span class="badge ${t.jenis}">${labelJenis}</span></td>
+                                       <td class="amount">${tanda} ${formatRupiah(t.nominal)}</td>
+                                       <td style="text-align:right; white-space:nowrap;">
+                                         <button class="edit-btn" data-id="${t.id}" title="Edit transaksi" aria-label="Edit transaksi">
+                                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                         </button>
+                                         <button class="delete-btn" data-id="${t.id}" title="Hapus transaksi" aria-label="Hapus transaksi">
+                                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
+                                         </button>
+                                       </td>`;
           tbody.appendChild(tr);
         });
 
@@ -1801,38 +1821,54 @@
       }
 
       /* =========================================================
-   AKUN / DOMPET — memisahkan transaksi ke rekening/e-wallet/cash yang
-   berbeda. Saldo total (dashboard di atas) tetap gabungan semua akun;
-   di sini tiap akun juga dirinci saldonya masing-masing.
-   ========================================================= */
-      function muatAkun() {
+                                    AKUN / DOMPET — memisahkan transaksi ke rekening/e-wallet/cash yang
+                                    berbeda. Saldo total (dashboard di atas) tetap gabungan semua akun;
+                                    di sini tiap akun juga dirinci saldonya masing-masing.
+                                    ========================================================= */
+      async function muatAkun() {
         try {
           const raw = localStorage.getItem(AKUN_KEY);
-          const daftar = raw ? JSON.parse(raw) : null;
-          return daftar && daftar.length ? daftar : [AKUN_DEFAULT];
+          if (!raw) return [AKUN_DEFAULT];
+
+          // Coba baca data lama (belum terenkripsi)
+          try {
+            const daftar = JSON.parse(raw); // ← yang benar
+            if (Array.isArray(daftar) && daftar.length) return daftar;
+          } catch (_) {}
+
+          // Data sudah terenkripsi
+          if (!encryptionKey) return [AKUN_DEFAULT];
+          const encrypted = JSON.parse(raw);
+          const daftar = await decryptData(encrypted, encryptionKey);
+          return daftar && Array.isArray(daftar) && daftar.length
+            ? daftar
+            : [AKUN_DEFAULT];
         } catch (err) {
           console.error("Gagal membaca data akun:", err);
           return [AKUN_DEFAULT];
         }
       }
 
-      function simpanAkun(daftar) {
+      async function simpanAkun(daftar) {
         try {
-          localStorage.setItem(AKUN_KEY, JSON.stringify(daftar));
+          if (!encryptionKey) {
+            localStorage.setItem(AKUN_KEY, JSON.stringify(daftar));
+            return true;
+          }
+          const encrypted = await encryptData(daftar, encryptionKey);
+          localStorage.setItem(AKUN_KEY, JSON.stringify(encrypted));
           return true;
         } catch (err) {
           console.error("Gagal menyimpan akun:", err);
-          alert(
-            "Gagal menyimpan akun! Penyimpanan browser mungkin penuh atau kamu sedang di mode privat/incognito.",
-          );
+          alert("Gagal menyimpan akun terenkripsi!");
           return false;
         }
       }
 
       // Mengisi ulang <select> akun. idSelect dipakai bersama oleh form transaksi & form transaksi berulang.
-      function isiOpsiAkun(idSelect, akunTerpilih) {
+      async function isiOpsiAkun(idSelect, akunTerpilih) {
         const select = document.getElementById(idSelect);
-        const daftar = muatAkun();
+        const daftar = await muatAkun();
         select.innerHTML = daftar
           .map(
             (a) => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`,
@@ -1843,9 +1879,9 @@
         }
       }
 
-      function isiOpsiFilterAkun() {
+      async function isiOpsiFilterAkun() {
         const select = document.getElementById("filter-akun");
-        const daftar = muatAkun();
+        const daftar = await muatAkun();
         select.innerHTML =
           '<option value="semua">Semua Akun</option>' +
           daftar
@@ -1855,7 +1891,6 @@
             )
             .join("");
       }
-
       function saldoAkun(nama) {
         return transaksi
           .filter((t) => t.akun === nama)
@@ -1865,8 +1900,8 @@
           );
       }
 
-      function renderAkun() {
-        const daftar = muatAkun();
+      async function renderAkun() {
+        const daftar = await muatAkun();
         const wrap = document.getElementById("daftar-akun");
         wrap.innerHTML = "";
 
@@ -1882,14 +1917,14 @@
           const item = document.createElement("div");
           item.className = "akun-item" + (aktif ? " aktif" : "");
           item.innerHTML = `
-      <span class="akun-nama akun-nama-klik" data-akun="${escapeHTML(nama)}" title="Klik untuk filter riwayat & grafik ke akun ini" role="button" tabindex="0">${escapeHTML(nama)}</span>
-      <span class="akun-kanan">
-        ${aktif ? '<span class="akun-filter-badge" data-clear-filter="1" title="Tampilkan semua akun lagi">Terfilter &times;</span>' : ""}
-        <span class="akun-saldo">${formatRupiah(saldoAkun(nama))}</span>
-        <button class="baris-hapus" data-akun="${escapeHTML(nama)}" title="${bisaHapus ? "Hapus akun" : "Tidak bisa dihapus (masih dipakai atau akun terakhir)"}" aria-label="Hapus akun" ${bisaHapus ? "" : "disabled"}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
-        </button>
-      </span>`;
+                                            <span class="akun-nama akun-nama-klik" data-akun="${escapeHTML(nama)}" title="Klik untuk filter riwayat & grafik ke akun ini" role="button" tabindex="0">${escapeHTML(nama)}</span>
+                                            <span class="akun-kanan">
+                                              ${aktif ? '<span class="akun-filter-badge" data-clear-filter="1" title="Tampilkan semua akun lagi">Terfilter &times;</span>' : ""}
+                                              <span class="akun-saldo">${formatRupiah(saldoAkun(nama))}</span>
+                                              <button class="baris-hapus" data-akun="${escapeHTML(nama)}" title="${bisaHapus ? "Hapus akun" : "Tidak bisa dihapus (masih dipakai atau akun terakhir)"}" aria-label="Hapus akun" ${bisaHapus ? "" : "disabled"}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
+                                              </button>
+                                            </span>`;
           wrap.appendChild(item);
         });
 
@@ -1920,7 +1955,6 @@
 
         document.getElementById("filter-akun").value = filterAkun;
       }
-
       // Menyetel filter akun (dipakai baik dari klik nama akun maupun dropdown filter),
       // lalu me-refresh tabel riwayat & grafik agar konsisten dengan akun terpilih.
       function filterKeAkun(nama) {
@@ -1932,8 +1966,8 @@
         renderGrafikAktif();
       }
 
-      function hapusAkun(nama) {
-        const daftar = muatAkun();
+      async function hapusAkun(nama) {
+        const daftar = await muatAkun();
         if (daftar.length <= 1) {
           tampilkanToast(
             "Tidak bisa menghapus akun terakhir — minimal harus ada satu akun.",
@@ -1948,71 +1982,87 @@
           );
           return;
         }
-        simpanAkun(daftar.filter((a) => a !== nama));
-        renderAkun();
-        isiOpsiAkun("input-akun");
-        isiOpsiAkun("berulang-akun");
-        isiOpsiFilterAkun();
-        tampilkanToast("Akun dihapus.", "sukses");
+        await simpanAkun(daftar.filter((a) => a !== nama));
+        await renderAkun();
+        await isiOpsiAkun("input-akun");
+        await isiOpsiAkun("berulang-akun");
+        await isiOpsiFilterAkun();
       }
 
-      document.getElementById("form-akun").addEventListener("submit", (e) => {
-        e.preventDefault();
-        const inputEl = document.getElementById("akun-nama-baru");
-        const nama = inputEl.value.trim();
-        const daftar = muatAkun();
+      document
+        .getElementById("form-akun")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const inputEl = document.getElementById("akun-nama-baru");
+          const nama = inputEl.value.trim();
+          const daftar = await muatAkun();
 
-        inputEl.setCustomValidity("");
-        if (daftar.some((a) => a.toLowerCase() === nama.toLowerCase())) {
-          inputEl.setCustomValidity("Akun dengan nama ini sudah ada.");
-        }
-        if (!e.target.checkValidity()) {
-          e.target.reportValidity();
-          return;
-        }
+          inputEl.setCustomValidity("");
+          if (daftar.some((a) => a.toLowerCase() === nama.toLowerCase())) {
+            inputEl.setCustomValidity("Akun dengan nama ini sudah ada.");
+          }
+          if (!e.target.checkValidity()) {
+            e.target.reportValidity();
+            return;
+          }
 
-        daftar.push(nama);
-        simpanAkun(daftar);
-        renderAkun();
-        isiOpsiAkun("input-akun", nama);
-        isiOpsiAkun("berulang-akun", nama);
-        isiOpsiFilterAkun();
-        e.target.reset();
-        tampilkanToast(
-          `Akun "${nama}" berhasil ditambahkan. Akun ini otomatis terpilih di form transaksi — jangan lupa isi saldo awalnya lewat transaksi income.`,
-          "sukses",
-        );
-      });
+          daftar.push(nama);
+          await simpanAkun(daftar);
+          await renderAkun();
+          await isiOpsiAkun("input-akun", nama);
+          await isiOpsiAkun("berulang-akun", nama);
+          await isiOpsiFilterAkun();
+          e.target.reset();
+          tampilkanToast(
+            `Akun "${nama}" berhasil ditambahkan. Akun ini otomatis terpilih di form transaksi — jangan lupa isi saldo awalnya lewat transaksi income.`,
+            "sukses",
+          );
+        });
 
       document
         .getElementById("akun-nama-baru")
         .addEventListener("input", (e) => e.target.setCustomValidity(""));
 
       /* =========================================================
-   TRANSAKSI BERULANG — aturan yang otomatis membuat transaksi baru
-   tiap bulan (misal gaji bulanan), tanpa perlu diinput manual ulang.
-   Sekali sebuah bulan sudah dibuatkan transaksinya, transaksi itu jadi
-   transaksi biasa (bisa diedit/dihapus lepas dari aturannya).
-   ========================================================= */
-      function muatBerulang() {
+                                    TRANSAKSI BERULANG — aturan yang otomatis membuat transaksi baru
+                                    tiap bulan (misal gaji bulanan), tanpa perlu diinput manual ulang.
+                                    Sekali sebuah bulan sudah dibuatkan transaksinya, transaksi itu jadi
+                                    transaksi biasa (bisa diedit/dihapus lepas dari aturannya).
+                                    ========================================================= */
+      async function muatBerulang() {
         try {
           const raw = localStorage.getItem(BERULANG_KEY);
-          return raw ? JSON.parse(raw) : [];
+          if (!raw) return [];
+
+          // Coba baca data lama (belum terenkripsi)
+          try {
+            const data = JSON.parse(raw);
+            if (Array.isArray(data)) return data;
+          } catch (_) {}
+
+          // Data sudah terenkripsi
+          if (!encryptionKey) return [];
+          const encrypted = JSON.parse(raw);
+          const data = await decryptData(encrypted, encryptionKey);
+          return data && Array.isArray(data) ? data : [];
         } catch (err) {
           console.error("Gagal membaca data transaksi berulang:", err);
           return [];
         }
       }
 
-      function simpanBerulang(daftar) {
+      async function simpanBerulang(daftar) {
         try {
-          localStorage.setItem(BERULANG_KEY, JSON.stringify(daftar));
+          if (!encryptionKey) {
+            localStorage.setItem(BERULANG_KEY, JSON.stringify(daftar));
+            return true;
+          }
+          const encrypted = await encryptData(daftar, encryptionKey);
+          localStorage.setItem(BERULANG_KEY, JSON.stringify(encrypted));
           return true;
         } catch (err) {
           console.error("Gagal menyimpan transaksi berulang:", err);
-          alert(
-            "Gagal menyimpan transaksi berulang! Penyimpanan browser mungkin penuh atau kamu sedang di mode privat/incognito.",
-          );
+          alert("Gagal menyimpan transaksi berulang terenkripsi!");
           return false;
         }
       }
@@ -2027,8 +2077,8 @@
       // Memeriksa setiap aturan berulang & membuat transaksi untuk bulan-bulan yang
       // belum dibuatkan (termasuk "mengejar" bulan-bulan yang terlewat jika aplikasi
       // sempat tidak dibuka), tanpa pernah membuat entri untuk tanggal yang belum tiba.
-      function prosesTransaksiBerulang() {
-        const daftar = muatBerulang();
+      async function prosesTransaksiBerulang() {
+        const daftar = await muatBerulang();
         if (daftar.length === 0) return;
 
         const bulanIni = hariIniISO().slice(0, 7);
@@ -2044,7 +2094,7 @@
 
           while (bulanCek <= bulanIni && pengaman < 24) {
             const bulanBerjalan = bulanCek === bulanIni;
-            if (bulanBerjalan && tanggalHariIni < rule.tanggal) break; // tanggalnya bulan ini belum tiba
+            if (bulanBerjalan && tanggalHariIni < rule.tanggal) break;
 
             transaksi.push({
               id:
@@ -2067,8 +2117,8 @@
         });
 
         if (totalDibuat > 0) {
-          simpanTransaksi();
-          simpanBerulang(daftar);
+          await simpanTransaksi();
+          await simpanBerulang(daftar);
           tampilkanToast(
             `${totalDibuat} transaksi berulang otomatis dibuat:\n${ringkasan.join("\n")}`,
             "sukses",
@@ -2076,8 +2126,8 @@
         }
       }
 
-      function renderBerulang() {
-        const daftar = muatBerulang();
+      async function renderBerulang() {
+        const daftar = await muatBerulang();
         const wrap = document.getElementById("daftar-berulang");
         const emptyEl = document.getElementById("berulang-empty");
 
@@ -2092,25 +2142,23 @@
           const item = document.createElement("div");
           item.className = "berulang-item";
           item.innerHTML = `
-      <div>
-        <p class="berulang-judul">${escapeHTML(rule.deskripsi)} — ${tanda} ${formatRupiah(rule.nominal)}</p>
-        <p class="berulang-sub">${labelJenis} · ${escapeHTML(rule.kategori)} · ${escapeHTML(rule.akun)} · setiap tanggal ${rule.tanggal}</p>
-      </div>
-      <button class="baris-hapus" data-id="${rule.id}" title="Hapus transaksi berulang" aria-label="Hapus transaksi berulang">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
-      </button>`;
+                                       <div>
+                                         <p class="berulang-judul">${escapeHTML(rule.deskripsi)} — ${tanda} ${formatRupiah(rule.nominal)}</p>
+                                         <p class="berulang-sub">${labelJenis} · ${escapeHTML(rule.kategori)} · ${escapeHTML(rule.akun)} · setiap tanggal ${rule.tanggal}</p>
+                                       </div>
+                                       <button class="baris-hapus" data-id="${rule.id}" title="Hapus transaksi berulang" aria-label="Hapus transaksi berulang">
+                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
+                                       </button>`;
           wrap.appendChild(item);
         });
-
         wrap.querySelectorAll(".baris-hapus").forEach((btn) => {
           btn.addEventListener("click", () => hapusBerulang(btn.dataset.id));
         });
       }
-
-      function hapusBerulang(id) {
-        const daftar = muatBerulang().filter((r) => r.id !== id);
-        simpanBerulang(daftar);
-        renderBerulang();
+      async function hapusBerulang(id) {
+        const daftar = (await muatBerulang()).filter((r) => r.id !== id);
+        await simpanBerulang(daftar);
+        await renderBerulang();
         tampilkanToast("Transaksi berulang dihapus.", "sukses");
       }
 
@@ -2126,7 +2174,7 @@
 
       document
         .getElementById("form-berulang")
-        .addEventListener("submit", (e) => {
+        .addEventListener("submit", async (e) => {
           e.preventDefault();
 
           const inputNominalEl = document.getElementById("berulang-nominal");
@@ -2157,43 +2205,59 @@
             terakhirDibuat: null,
           };
 
-          const daftar = muatBerulang();
+          const daftar = await muatBerulang();
           daftar.push(rule);
-          simpanBerulang(daftar);
+          await simpanBerulang(daftar);
 
           e.target.reset();
           isiOpsiKategori("income", null, "berulang-kategori");
-          isiOpsiAkun("berulang-akun");
+          await isiOpsiAkun("berulang-akun");
           document.getElementById("berulang-tanggal").value = 1;
 
-          prosesTransaksiBerulang();
-          renderSemua();
+          await prosesTransaksiBerulang();
+          await renderSemua();
           tampilkanToast("Transaksi berulang berhasil ditambahkan.", "sukses");
         });
 
       /* =========================================================
-   ANGGARAN BULANAN — batas pengeluaran per kategori, berlaku
-   berulang setiap bulan (bukan per tanggal tertentu)
-   ========================================================= */
-      function muatAnggaran() {
+                                    ANGGARAN BULANAN — batas pengeluaran per kategori, berlaku
+                                    berulang setiap bulan (bukan per tanggal tertentu)
+                                    ========================================================= */
+      async function muatAnggaran() {
         try {
           const raw = localStorage.getItem(ANGGARAN_KEY);
-          return raw ? JSON.parse(raw) : {};
+          if (!raw) return {};
+
+          // Coba baca data lama (belum terenkripsi)
+          try {
+            const data = JSON.parse(raw);
+            if (data && typeof data === "object" && !Array.isArray(data))
+              return data;
+          } catch (_) {}
+
+          // Data sudah terenkripsi
+          if (!encryptionKey) return {};
+          const encrypted = JSON.parse(raw);
+          const data = await decryptData(encrypted, encryptionKey);
+          return data && typeof data === "object" ? data : {};
         } catch (err) {
           console.error("Gagal membaca data anggaran:", err);
           return {};
         }
       }
 
-      function simpanAnggaran(anggaran) {
+      async function simpanAnggaran(anggaran) {
         try {
-          localStorage.setItem(ANGGARAN_KEY, JSON.stringify(anggaran));
+          if (!encryptionKey) {
+            localStorage.setItem(ANGGARAN_KEY, JSON.stringify(anggaran));
+            return true;
+          }
+          const encrypted = await encryptData(anggaran, encryptionKey);
+          localStorage.setItem(ANGGARAN_KEY, JSON.stringify(encrypted));
           return true;
         } catch (err) {
           console.error("Gagal menyimpan anggaran:", err);
-          alert(
-            "Gagal menyimpan anggaran! Penyimpanan browser mungkin penuh atau kamu sedang di mode privat/incognito.",
-          );
+          alert("Gagal menyimpan anggaran terenkripsi!");
           return false;
         }
       }
@@ -2205,8 +2269,8 @@
           .join("");
       }
 
-      function renderAnggaran() {
-        const anggaran = muatAnggaran();
+      async function renderAnggaran() {
+        const anggaran = await muatAnggaran();
         const kunciBulan = hariIniISO().slice(0, 7);
         const daftarKategori = Object.keys(anggaran);
         const wrap = document.getElementById("daftar-anggaran");
@@ -2241,20 +2305,20 @@
           const item = document.createElement("div");
           item.className = "anggaran-item";
           item.innerHTML = `
-      <div class="anggaran-baris-atas">
-        <span class="anggaran-nama">${escapeHTML(kategori)}</span>
-        <span style="display:flex; align-items:center; gap:6px;">
-          <span class="anggaran-nilai">${formatRupiah(terpakai)} / ${formatRupiah(batas)}</span>
-          <button class="baris-hapus" data-kategori="${escapeHTML(kategori)}" title="Hapus anggaran" aria-label="Hapus anggaran">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
-          </button>
-        </span>
-      </div>
-      <div class="anggaran-track">
-        <div class="anggaran-isi ${kelasStatus}" style="width:${persenLebar}%;"></div>
-      </div>
-      ${teksStatus ? `<p class="anggaran-status-teks ${kelasStatus}">${teksStatus}</p>` : ""}
-    `;
+                                       <div class="anggaran-baris-atas">
+                                         <span class="anggaran-nama">${escapeHTML(kategori)}</span>
+                                         <span style="display:flex; align-items:center; gap:6px;">
+                                           <span class="anggaran-nilai">${formatRupiah(terpakai)} / ${formatRupiah(batas)}</span>
+                                           <button class="baris-hapus" data-kategori="${escapeHTML(kategori)}" title="Hapus anggaran" aria-label="Hapus anggaran">
+                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
+                                           </button>
+                                         </span>
+                                       </div>
+                                       <div class="anggaran-track">
+                                         <div class="anggaran-isi ${kelasStatus}" style="width:${persenLebar}%;"></div>
+                                       </div>
+                                       ${teksStatus ? `<p class="anggaran-status-teks ${kelasStatus}">${teksStatus}</p>` : ""}
+                                     `;
           wrap.appendChild(item);
         });
 
@@ -2265,11 +2329,11 @@
         });
       }
 
-      function hapusAnggaran(kategori) {
-        const anggaran = muatAnggaran();
+      async function hapusAnggaran(kategori) {
+        const anggaran = await muatAnggaran();
         delete anggaran[kategori];
-        simpanAnggaran(anggaran);
-        renderAnggaran();
+        await simpanAnggaran(anggaran);
+        await renderAnggaran();
         tampilkanToast("Anggaran dihapus.", "sukses");
       }
 
@@ -2277,7 +2341,7 @@
 
       document
         .getElementById("form-anggaran")
-        .addEventListener("submit", (e) => {
+        .addEventListener("submit", async (e) => {
           e.preventDefault();
 
           const kategori = document.getElementById("anggaran-kategori").value;
@@ -2296,19 +2360,19 @@
             return;
           }
 
-          const anggaran = muatAnggaran();
+          const anggaran = await muatAnggaran();
           anggaran[kategori] = nominal;
-          simpanAnggaran(anggaran);
-          renderAnggaran();
+          await simpanAnggaran(anggaran);
+          await renderAnggaran();
           e.target.reset();
           tampilkanToast(`Anggaran untuk ${kategori} disimpan.`, "sukses");
         });
 
       /* =========================================================
-   RENDER: GRAFIK KEUANGAN (Chart.js) — 3 tab: Ringkasan, Tren Bulanan, Per Kategori
-   Warna good/critical dipakai konsisten dengan badge & kartu saldo
-   di atas, supaya identitas pemasukan/pengeluaran mudah dikenali.
-   ========================================================= */
+                                    RENDER: GRAFIK KEUANGAN (Chart.js) — 3 tab: Ringkasan, Tren Bulanan, Per Kategori
+                                    Warna good/critical dipakai konsisten dengan badge & kartu saldo
+                                    di atas, supaya identitas pemasukan/pengeluaran mudah dikenali.
+                                    ========================================================= */
 
       // Tab "Ringkasan": total pemasukan vs pengeluaran sepanjang riwayat
       function renderGrafikRingkasan() {
@@ -2632,20 +2696,20 @@
         });
 
       /* =========================================================
-   FUNGSI UTAMA: RENDER SEMUA TAMPILAN SEKALIGUS
-   ========================================================= */
-      function renderSemua() {
+                                    FUNGSI UTAMA: RENDER SEMUA TAMPILAN SEKALIGUS
+                                    ========================================================= */
+      async function renderSemua() {
         renderDashboard();
         renderTabel();
         renderGrafikAktif();
-        renderAnggaran();
-        renderAkun();
-        renderBerulang();
+        await renderAnggaran();
+        await renderAkun();
+        await renderBerulang();
       }
 
       /* =========================================================
-   AKSI: TAMBAH, EDIT & HAPUS TRANSAKSI
-   ========================================================= */
+                                    AKSI: TAMBAH, EDIT & HAPUS TRANSAKSI
+                                    ========================================================= */
       document.querySelectorAll('input[name="jenis"]').forEach((radio) => {
         radio.addEventListener("change", () => isiOpsiKategori(radio.value));
       });
@@ -2654,7 +2718,7 @@
 
       document
         .getElementById("form-transaksi")
-        .addEventListener("submit", (e) => {
+        .addEventListener("submit", async (e) => {
           e.preventDefault();
 
           const inputNominalEl = document.getElementById("input-nominal");
@@ -2708,12 +2772,12 @@
             });
             e.target.reset();
             isiOpsiKategori("income");
-            isiOpsiAkun("input-akun");
+            await isiOpsiAkun("input-akun");
             document.getElementById("input-tanggal").value = hariIniISO();
           }
 
-          simpanTransaksi();
-          renderSemua();
+          await simpanTransaksi();
+          await renderSemua();
           tampilkanToast(
             sedangEdit
               ? "Transaksi berhasil diperbarui."
@@ -2768,18 +2832,18 @@
         .getElementById("btn-batal-edit")
         .addEventListener("click", batalEdit);
 
-      function hapusTransaksi(id) {
+      async function hapusTransaksi(id) {
         if (!confirm("Hapus transaksi ini?")) return;
         if (id === editingId) batalEdit();
         transaksi = transaksi.filter((t) => t.id !== id);
-        simpanTransaksi();
-        renderSemua();
+        await simpanTransaksi();
+        await renderSemua();
         tampilkanToast("Transaksi berhasil dihapus.", "sukses");
       }
 
       /* =========================================================
-   EKSPOR LAPORAN (CSV / TXT) DENGAN FILTER RENTANG WAKTU
-   ========================================================= */
+                                    EKSPOR LAPORAN (CSV / TXT) DENGAN FILTER RENTANG WAKTU
+                                    ========================================================= */
 
       // Menghitung rentang tanggal {mulai, selesai} berdasarkan periode terpilih
       function ambilRentangPeriode(periode) {
@@ -2933,9 +2997,9 @@
         .addEventListener("click", eksporLaporan);
 
       /* =========================================================
-   BACKUP & RESTORE DATA (JSON) — terpisah dari laporan CSV/TXT,
-   ditujukan untuk dipulihkan lagi lewat aplikasi ini, bukan dibaca manusia
-   ========================================================= */
+                                    BACKUP & RESTORE DATA (JSON) — terpisah dari laporan CSV/TXT,
+                                    ditujukan untuk dipulihkan lagi lewat aplikasi ini, bukan dibaca manusia
+                                    ========================================================= */
 
       // Mengunduh seluruh transaksi (bukan hasil filter periode) sebagai file JSON cadangan
       function eksporBackupJSON() {
@@ -2972,7 +3036,7 @@
           if (!file) return;
 
           const reader = new FileReader();
-          reader.onload = () => {
+          reader.onload = async () => {
             let parsed;
             try {
               parsed = JSON.parse(reader.result);
@@ -3037,8 +3101,8 @@
             });
 
             if (ditambahkan > 0) {
-              simpanTransaksi();
-              renderSemua();
+              await simpanTransaksi();
+              await renderSemua();
             }
 
             tampilkanToast(
@@ -3055,8 +3119,8 @@
         });
 
       /* =========================================================
-   PENCARIAN, FILTER, URUTAN KOLOM — EVENT LISTENERS
-   ========================================================= */
+                                    PENCARIAN, FILTER, URUTAN KOLOM — EVENT LISTENERS
+                                    ========================================================= */
       document
         .getElementById("cari-keterangan")
         .addEventListener("input", (e) => {
@@ -3106,8 +3170,8 @@
       });
 
       /* =========================================================
-   UTIL & TEMA (terang/gelap)
-   ========================================================= */
+                                    UTIL & TEMA (terang/gelap)
+                                    ========================================================= */
       function hariIniISO() {
         const d = new Date();
         const offset = d.getTimezoneOffset();
@@ -3151,12 +3215,12 @@
       });
 
       /* =========================================================
-   KUNCI PIN — pengaman akses ke tampilan aplikasi, opsional (opt-in).
-   CATATAN JUJUR: ini pagar akses UI, BUKAN enkripsi. Data transaksi di
-   LocalStorage tetap tersimpan sebagai teks biasa; siapa pun yang membuka
-   DevTools tetap bisa membacanya langsung. PIN hanya menahan orang yang
-   sekadar membuka tab/aplikasi ini secara sekilas di perangkat bersama.
-   ========================================================= */
+                                    KUNCI PIN — pengaman akses ke tampilan aplikasi, opsional (opt-in).
+                                    CATATAN JUJUR: ini pagar akses UI, BUKAN enkripsi. Data transaksi di
+                                    LocalStorage tetap tersimpan sebagai teks biasa; siapa pun yang membuka
+                                    DevTools tetap bisa membacanya langsung. PIN hanya menahan orang yang
+                                    sekadar membuka tab/aplikasi ini secara sekilas di perangkat bersama.
+                                    ========================================================= */
       function bufferKeHex(buffer) {
         return [...new Uint8Array(buffer)]
           .map((b) => b.toString(16).padStart(2, "0"))
@@ -3168,6 +3232,75 @@
         const digest = await crypto.subtle.digest("SHA-256", data);
         return bufferKeHex(digest);
       }
+
+      // === ENKRIPSI DATA ===
+      function hexToBuffer(hex) {
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) {
+          bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+        }
+        return bytes.buffer;
+      }
+
+      function bufferToHex(buffer) {
+        return [...new Uint8Array(buffer)]
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      async function deriveKey(pin, saltHex) {
+        const enc = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey(
+          "raw",
+          enc.encode(pin),
+          "PBKDF2",
+          false,
+          ["deriveKey"],
+        );
+        return crypto.subtle.deriveKey(
+          {
+            name: "PBKDF2",
+            salt: hexToBuffer(saltHex),
+            iterations: 120000,
+            hash: "SHA-256",
+          },
+          keyMaterial,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["encrypt", "decrypt"],
+        );
+      }
+
+      async function encryptData(dataObj, key) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encoded = new TextEncoder().encode(JSON.stringify(dataObj));
+        const ciphertext = await crypto.subtle.encrypt(
+          { name: "AES-GCM", iv },
+          key,
+          encoded,
+        );
+        return {
+          iv: bufferToHex(iv),
+          data: bufferToHex(ciphertext),
+        };
+      }
+
+      async function decryptData(encrypted, key) {
+        try {
+          const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: hexToBuffer(encrypted.iv) },
+            key,
+            hexToBuffer(encrypted.data),
+          );
+          return JSON.parse(new TextDecoder().decode(decrypted));
+        } catch (e) {
+          console.error("Gagal dekripsi:", e);
+          return null;
+        }
+      }
+
+      // Variabel global untuk menyimpan key (hanya di memory)
+      let encryptionKey = null;
 
       function buatSaltBaru() {
         const arr = new Uint8Array(16);
@@ -3221,12 +3354,12 @@
       }
 
       // Dipanggil setiap kali overlay berhasil dilewati (PIN benar, baru dibuat, atau dilewati)
-      function bukaAplikasi() {
+      async function bukaAplikasi() {
         sembunyikanOverlayPin();
-        prosesTransaksiBerulang();
-        renderSemua();
+        transaksi = await muatTransaksi(); // ← load di sini
+        await prosesTransaksiBerulang();
+        await renderSemua();
       }
-
       document
         .getElementById("form-pin-buat")
         .addEventListener("submit", async (e) => {
@@ -3249,6 +3382,10 @@
 
           errorEl.textContent = "";
           await simpanPinBaru(pinBaru);
+          encryptionKey = await deriveKey(
+            pinBaru,
+            localStorage.getItem(PIN_SALT_KEY),
+          );
           pinBaruEl.value = "";
           pinKonfirmasiEl.value = "";
           perbaruiUiKuncPin();
@@ -3274,8 +3411,10 @@
           const inputEl = document.getElementById("pin-input-masuk");
           const errorEl = document.getElementById("pin-masuk-error");
 
-          const benar = await cekPin(inputEl.value);
+          const pin = inputEl.value;
+          const benar = await cekPin(pin);
           inputEl.value = "";
+
           if (!benar) {
             errorEl.textContent = "PIN salah, coba lagi.";
             inputEl.focus();
@@ -3286,6 +3425,12 @@
           }
 
           errorEl.textContent = "";
+
+          // ===== INI BAGIAN PENTING (1.3) =====
+          const salt = localStorage.getItem(PIN_SALT_KEY);
+          encryptionKey = await deriveKey(pin, salt);
+          // ==================================
+
           bukaAplikasi();
         });
 
@@ -3334,8 +3479,8 @@
         });
 
       /* =========================================================
-   INISIALISASI APLIKASI
-   ========================================================= */
+                                    INISIALISASI APLIKASI
+                                    ========================================================= */
       (function init() {
         const temaTersimpan = localStorage.getItem(THEME_KEY);
         if (temaTersimpan) terapkanTema(temaTersimpan);
