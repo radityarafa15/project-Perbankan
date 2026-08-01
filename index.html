@@ -1267,9 +1267,11 @@
           <h2 style="margin: 0">Riwayat Transaksi</h2>
           <div class="export-controls">
             <select id="select-periode" title="Rentang waktu laporan">
-              <option value="minggu">Per Minggu (minggu ini)</option>
-              <option value="bulan" selected>Per Bulan (bulan ini)</option>
-              <option value="tahun">Per Tahun (tahun ini)</option>
+              <option value="hari">Hari Ini</option>
+              <option value="minggu">Minggu</option>
+              <option value="bulan" selected>Bulan</option>
+              <option value="tahun">Tahun</option>
+              <option value="semua">Semua Transaksi</option>
             </select>
 
             <select id="select-format" title="Format file">
@@ -2879,8 +2881,28 @@
         const now = new Date();
         let mulai, selesai;
 
-        if (periode === "minggu") {
-          const hari = now.getDay(); // 0 = Minggu ... 6 = Sabtu
+        if (periode === "hari") {
+          // Hari ini: 00:00 – 23:59
+          mulai = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            0,
+            0,
+            0,
+            0,
+          );
+          selesai = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
+        } else if (periode === "minggu") {
+          const hari = now.getDay();
           const selisihKeSenin = (hari === 0 ? -6 : 1) - hari;
           mulai = new Date(now);
           mulai.setDate(now.getDate() + selisihKeSenin);
@@ -2899,14 +2921,25 @@
             59,
             999,
           );
-        } else {
-          // tahun
+        } else if (periode === "tahun") {
           mulai = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
           selesai = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        } else {
+          // "semua" — dari transaksi paling lama sampai sekarang
+          mulai = new Date(2000, 0, 1, 0, 0, 0, 0);
+          selesai = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
         }
+
         return { mulai, selesai };
       }
-
       // Menyusun isi file CSV dari daftar transaksi terfilter
       function buatKontenCSV(daftar) {
         const escapeCSV = (val) => `"${String(val).replace(/"/g, '""')}"`;
@@ -3072,9 +3105,11 @@
         const periode = document.getElementById("select-periode").value;
         const format = document.getElementById("select-format").value;
         const labelPeriode = {
-          minggu: "Per Minggu",
-          bulan: "Per Bulan",
-          tahun: "Per Tahun",
+          hari: "Hari Ini",
+          minggu: " Minggu",
+          bulan: " Bulan",
+          tahun: " Tahun",
+          semua: "Semua Transaksi",
         }[periode];
 
         const { mulai, selesai } = ambilRentangPeriode(periode);
