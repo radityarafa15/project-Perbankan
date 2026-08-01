@@ -1658,13 +1658,25 @@
       }
 
       function renderDashboard() {
-        const { totalIncome, totalExpense, saldo } = hitungRingkasan();
+        const daftar = transaksiTerfilterAkun();
+        const { totalIncome, totalExpense, saldo } = hitungRingkasan(daftar);
+
         document.getElementById("stat-balance").textContent =
           formatRupiah(saldo);
         document.getElementById("stat-income").textContent =
           formatRupiah(totalIncome);
         document.getElementById("stat-expense").textContent =
           formatRupiah(totalExpense);
+
+        // Update label agar jelas akun mana yang sedang ditampilkan
+        const labelAkun = filterAkun === "semua" ? "Semua Akun" : filterAkun;
+        const elBalance = document.querySelector(".stat-card.balance .label");
+        const elIncome = document.querySelector(".stat-card.income .label");
+        const elExpense = document.querySelector(".stat-card.expense .label");
+
+        if (elBalance) elBalance.textContent = `Saldo (${labelAkun})`;
+        if (elIncome) elIncome.textContent = `Pemasukan (${labelAkun})`;
+        if (elExpense) elExpense.textContent = `Pengeluaran (${labelAkun})`;
       }
 
       /* =========================================================
@@ -1977,6 +1989,7 @@
         filterAkun = nama;
         halamanAktif = 1;
         document.getElementById("filter-akun").value = filterAkun;
+        renderDashboard(); // ← tambahkan ini
         renderAkun();
         renderTabel();
         renderGrafikAktif();
