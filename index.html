@@ -889,13 +889,11 @@
       }
 
       /* =====================================================
-     LAYOUT SIDEBAR + KONTEN
+     LAYOUT SIDEBAR + KONTEN — responsive device
      ===================================================== */
+      /* Default: desktop — sidebar kiri */
       .app-body {
         display: flex;
-        max-width: 1180px;
-        margin: 0 auto;
-        padding: 24px;
         gap: 20px;
         align-items: flex-start;
       }
@@ -969,21 +967,53 @@
         width: 100%;
       }
 
+      /* HP & tablet kecil */
       @media (max-width: 860px) {
         .app-body {
-          flex-direction: column;
+          flex-direction: column; /* sidebar di atas, konten di bawah */
         }
+
         .sidebar {
           width: 100%;
           position: static;
           display: flex;
           flex-wrap: wrap;
           gap: 6px;
+          padding: 10px;
         }
+
         .sidebar-btn {
-          width: auto;
           flex: 1 1 auto;
+          min-width: 120px;
           margin-bottom: 0;
+          justify-content: center;
+          font-size: 12.5px;
+          padding: 10px 8px;
+        }
+
+        .sidebar-btn .sidebar-icon {
+          font-size: 16px;
+        }
+
+        /* Kartu dashboard 1 kolom di HP sangat kecil */
+        .dashboard {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* HP sangat kecil */
+      @media (max-width: 480px) {
+        main,
+        .app-body {
+          padding: 12px;
+        }
+
+        .sidebar-btn {
+          min-width: calc(50% - 6px); /* 2 kolom menu */
+        }
+
+        .stat-card .value {
+          font-size: 20px;
         }
       }
     </style>
@@ -1449,7 +1479,7 @@
                     id="btn-backup-json"
                     title="Unduh seluruh data transaksi sebagai cadangan JSON"
                   >
-                    ⬇ Backup (JSON)
+                    ⬇ Ekspor Backup
                   </button>
                   <button
                     class="btn btn-outline btn-sm"
