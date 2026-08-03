@@ -1,8 +1,13 @@
-# TODO — Tambah ID Section + Shortcut Menu Cepat (index.html)
+# TODO — Layout Sidebar + Section Panel (index.html)
 
-- [x] 1. Fix malformed `< class="main-grid" >` → `<div class="main-grid" id="section-transaksi">`
-- [x] 2. Rename `id="section-Wallet"` → `id="section-wallet"`
-- [x] 3. Insert shortcut panel (Menu Cepat) after dashboard section
-- [x] 4. Add CSS for `.shortcut-*` classes
-- [x] 5. Add JS scroll handler for `.shortcut-card`
-- [x] 6. Verify changes in file
+- [x] 1. Tambah CSS layout sidebar (.app-body, .sidebar, .sidebar-btn, .content-area, .panel-section)
+- [x] 2. Bungkus dashboard dengan .dashboard-wrap
+- [x] 3. Ganti blok shortcut jadi .app-body + sidebar nav (5 tombol menu)
+- [x] 4. Bungkus tiap section dengan div.panel-section + id:
+  - section-transaksi (Form + Grafik, aktif)
+  - section-wallet (Akun / Dompet)
+  - section-autodebit (Transaksi Berulang)
+  - section-plan (Anggaran Bulanan)
+  - section-history (Riwayat Transaksi)
+- [x] 5. Tambah JS handler .sidebar-btn → toggle .panel-section.active
+- [x] 6. Verifikasi struktur HTML (kurung div seimbang)

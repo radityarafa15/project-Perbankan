@@ -889,45 +889,102 @@
       }
 
       /* =====================================================
-     MENU CEPAT (SHORTCUT)
+     LAYOUT SIDEBAR + KONTEN
      ===================================================== */
-      .shortcut-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 12px;
-      }
-      .shortcut-card {
+      .app-body {
         display: flex;
-        flex-direction: column;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 24px;
+        gap: 20px;
         align-items: flex-start;
-        gap: 6px;
-        padding: 16px;
-        border-radius: 12px;
+      }
+
+      .sidebar {
+        width: 200px;
+        flex-shrink: 0;
+        background: var(--surface-1);
         border: 1px solid var(--border);
-        background: var(--page-plane);
-        color: var(--text-primary);
+        border-radius: 14px;
+        padding: 12px;
+        box-shadow: var(--shadow);
+        position: sticky;
+        top: 20px;
+      }
+
+      .sidebar-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 12px 14px;
+        margin-bottom: 6px;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 13.5px;
+        font-weight: 500;
+        font-family: inherit;
         cursor: pointer;
         text-align: left;
-        font-family: inherit;
-        transition:
-          border-color 0.15s,
-          transform 0.15s;
       }
-      .shortcut-card:hover {
-        border-color: var(--accent);
-        transform: translateY(-2px);
+
+      .sidebar-btn:hover {
+        background: var(--page-plane);
+        color: var(--text-primary);
       }
-      .shortcut-icon {
-        font-size: 22px;
-        line-height: 1;
-      }
-      .shortcut-title {
-        font-size: 14px;
+
+      .sidebar-btn.active {
+        background: rgba(42, 120, 214, 0.12);
+        color: var(--accent);
         font-weight: 600;
       }
-      .shortcut-desc {
-        font-size: 12px;
-        color: var(--text-secondary);
+
+      .sidebar-icon {
+        font-size: 18px;
+        width: 24px;
+        text-align: center;
+      }
+
+      .content-area {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* Sembunyikan section yang tidak aktif */
+      .panel-section {
+        display: none;
+      }
+
+      .panel-section.active {
+        display: block;
+      }
+
+      /* Dashboard selalu di atas konten (opsional) */
+      .dashboard-wrap {
+        width: 100%;
+      }
+
+      @media (max-width: 860px) {
+        .app-body {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          position: static;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .sidebar-btn {
+          width: auto;
+          flex: 1 1 auto;
+          margin-bottom: 0;
+        }
       }
     </style>
   </head>
@@ -989,470 +1046,491 @@
 
     <main>
       <!-- ================= DASHBOARD SALDO ================= -->
-      <section class="dashboard">
-        <div class="stat-card balance">
-          <span class="icon">
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
-              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
-              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
-            </svg>
-          </span>
-          <div>
-            <p class="label">Total Saldo Saat Ini</p>
-            <p class="value" id="stat-balance">Rp 0</p>
-          </div>
-        </div>
-        <div class="stat-card income">
-          <span class="icon">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M12 19V5"></path>
-              <path d="m5 12 7-7 7 7"></path>
-            </svg>
-          </span>
-          <div>
-            <p class="label">Total Pemasukan</p>
-            <p class="value" id="stat-income">Rp 0</p>
-          </div>
-        </div>
-        <div class="stat-card expense">
-          <span class="icon">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M12 5v14"></path>
-              <path d="m19 12-7 7-7-7"></path>
-            </svg>
-          </span>
-          <div>
-            <p class="label">Total Pengeluaran</p>
-            <p class="value" id="stat-expense">Rp 0</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= SHORTCUT ================= -->
-      <section class="panel" id="section-shortcut">
-        <h2>Menu Cepat</h2>
-        <div class="shortcut-grid">
-          <button
-            type="button"
-            class="shortcut-card"
-            data-target="section-transaksi"
-          >
-            <span class="shortcut-icon">📊</span>
-            <span class="shortcut-title">Transaksi</span>
-            <span class="shortcut-desc">Input & grafik keuangan</span>
-          </button>
-          <button
-            type="button"
-            class="shortcut-card"
-            data-target="section-autodebit"
-          >
-            <span class="shortcut-icon">🔄</span>
-            <span class="shortcut-title">Autodebit</span>
-            <span class="shortcut-desc">Transaksi berulang</span>
-          </button>
-          <button
-            type="button"
-            class="shortcut-card"
-            data-target="section-plan"
-          >
-            <span class="shortcut-icon">📋</span>
-            <span class="shortcut-title">Financial Plan</span>
-            <span class="shortcut-desc">Anggaran bulanan</span>
-          </button>
-          <button
-            type="button"
-            class="shortcut-card"
-            data-target="section-history"
-          >
-            <span class="shortcut-icon">📜</span>
-            <span class="shortcut-title">Transaction History</span>
-            <span class="shortcut-desc">Riwayat transaksi</span>
-          </button>
-          <button
-            type="button"
-            class="shortcut-card"
-            data-target="section-wallet"
-          >
-            <span class="shortcut-icon">👛</span>
-            <span class="shortcut-title">Wallet</span>
-            <span class="shortcut-desc">Akun / dompet</span>
-          </button>
-        </div>
-      </section>
-
-      <div class="main-grid" id="section-transaksi">
-        <!-- ================= FORM TRANSAKSI ================= -->
-        <section class="panel">
-          <h2 id="form-heading">Tambah Transaksi</h2>
-          <form id="form-transaksi">
-            <div class="type-toggle">
-              <input
-                type="radio"
-                name="jenis"
-                id="type-income"
-                value="income"
-                checked
-              />
-              <label for="type-income">⬆ Pemasukan</label>
-              <input
-                type="radio"
-                name="jenis"
-                id="type-expense"
-                value="expense"
-              />
-              <label for="type-expense">⬇ Pengeluaran</label>
-            </div>
-
-            <div class="field">
-              <label for="input-kategori">Kategori</label>
-              <select id="input-kategori" required></select>
-            </div>
-
-            <div class="field">
-              <label for="input-akun">Akun / Dompet</label>
-              <select id="input-akun" required></select>
-            </div>
-
-            <div class="field">
-              <label for="input-nominal">Nominal (Rp)</label>
-              <input
-                type="text"
-                inputmode="numeric"
-                id="input-nominal"
-                placeholder="Contoh: 50.000"
-                required
-              />
-            </div>
-
-            <div class="field">
-              <label for="input-deskripsi">Keterangan</label>
-              <input
-                type="text"
-                id="input-deskripsi"
-                maxlength="80"
-                placeholder="Contoh: Gaji bulanan"
-                pattern=".*\S.*"
-                title="Keterangan tidak boleh kosong atau hanya berisi spasi"
-                required
-              />
-            </div>
-
-            <div class="field">
-              <label for="input-tanggal">Tanggal</label>
-              <input type="date" id="input-tanggal" required />
-            </div>
-
-            <div class="form-actions">
-              <button
-                type="submit"
-                class="btn btn-primary"
-                id="btn-submit-form"
+      <div class="dashboard-wrap">
+        <section class="dashboard">
+          <div class="stat-card balance">
+            <span class="icon">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               >
-                + Simpan Transaksi
-              </button>
-              <button
-                type="button"
-                class="btn btn-outline"
-                id="btn-batal-edit"
-                style="display: none"
+                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+              </svg>
+            </span>
+            <div>
+              <p class="label">Total Saldo Saat Ini</p>
+              <p class="value" id="stat-balance">Rp 0</p>
+            </div>
+          </div>
+          <div class="stat-card income">
+            <span class="icon">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               >
-                Batal
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <!-- ================= GRAFIK ================= -->
-        <section class="panel">
-          <h2>Grafik Keuangan</h2>
-          <div class="chart-tabs">
-            <button type="button" class="chart-tab active" data-tab="ringkasan">
-              Ringkasan
-            </button>
-            <button type="button" class="chart-tab" data-tab="tren">
-              Tren Bulanan
-            </button>
-            <button type="button" class="chart-tab" data-tab="kategori">
-              Per Kategori
-            </button>
-          </div>
-
-          <div id="tab-ringkasan">
-            <div class="chart-wrap">
-              <canvas id="chart-ringkasan"></canvas>
-              <p class="chart-empty" id="chart-empty-msg">
-                Belum ada transaksi untuk ditampilkan.
-              </p>
+                <path d="M12 19V5"></path>
+                <path d="m5 12 7-7 7 7"></path>
+              </svg>
+            </span>
+            <div>
+              <p class="label">Total Pemasukan</p>
+              <p class="value" id="stat-income">Rp 0</p>
             </div>
           </div>
-
-          <div id="tab-tren" style="display: none">
-            <div class="chart-wrap">
-              <canvas id="chart-tren"></canvas>
-              <p class="chart-empty" id="chart-tren-empty-msg">
-                Belum ada transaksi untuk ditampilkan.
-              </p>
-            </div>
-          </div>
-
-          <div id="tab-kategori" style="display: none">
-            <div class="kategori-chart-toolbar">
-              <select id="kategori-chart-jenis" title="Pilih jenis transaksi">
-                <option value="expense" selected>Pengeluaran</option>
-                <option value="income">Pemasukan</option>
-              </select>
-            </div>
-            <div class="chart-wrap">
-              <canvas id="chart-kategori"></canvas>
-              <p class="chart-empty" id="chart-kategori-empty-msg">
-                Belum ada transaksi untuk ditampilkan.
-              </p>
+          <div class="stat-card expense">
+            <span class="icon">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 5v14"></path>
+                <path d="m19 12-7 7-7-7"></path>
+              </svg>
+            </span>
+            <div>
+              <p class="label">Total Pengeluaran</p>
+              <p class="value" id="stat-expense">Rp 0</p>
             </div>
           </div>
         </section>
       </div>
 
-      <!-- ================= AKUN / DOMPET ================= -->
-      <section class="panel" id="section-wallet">
-        <h2>Akun / Dompet</h2>
-        <form class="akun-form" id="form-akun">
-          <input
-            type="text"
-            id="akun-nama-baru"
-            maxlength="40"
-            pattern=".*\S.*"
-            title="Nama akun tidak boleh kosong atau hanya berisi spasi"
-            placeholder="Nama akun, contoh: Rekening BCA"
-            required
-          />
-          <button type="submit" class="btn btn-primary">+ Tambah Akun</button>
-        </form>
-        <div id="daftar-akun"></div>
-      </section>
-
-      <!-- ================= TRANSAKSI BERULANG ================= -->
-      <section class="panel" id="section-autodebit">
-        <h2>
-          Transaksi Berulang <span class="muted">(otomatis setiap bulan)</span>
-        </h2>
-        <form id="form-berulang">
-          <div class="type-toggle">
-            <input
-              type="radio"
-              name="jenis-berulang"
-              id="berulang-income"
-              value="income"
-              checked
-            />
-            <label for="berulang-income">⬆ Pemasukan</label>
-            <input
-              type="radio"
-              name="jenis-berulang"
-              id="berulang-expense"
-              value="expense"
-            />
-            <label for="berulang-expense">⬇ Pengeluaran</label>
-          </div>
-          <div class="field">
-            <label for="berulang-kategori">Kategori</label>
-            <select id="berulang-kategori" required></select>
-          </div>
-          <div class="field">
-            <label for="berulang-akun">Akun / Dompet</label>
-            <select id="berulang-akun" required></select>
-          </div>
-          <div class="field">
-            <label for="berulang-nominal">Nominal (Rp)</label>
-            <input
-              type="text"
-              inputmode="numeric"
-              id="berulang-nominal"
-              placeholder="Contoh: 5.000.000"
-              required
-            />
-          </div>
-          <div class="field">
-            <label for="berulang-deskripsi">Keterangan</label>
-            <input
-              type="text"
-              id="berulang-deskripsi"
-              maxlength="80"
-              pattern=".*\S.*"
-              title="Keterangan tidak boleh kosong atau hanya berisi spasi"
-              placeholder="Contoh: Gaji bulanan"
-              required
-            />
-          </div>
-          <div class="field">
-            <label for="berulang-tanggal"
-              >Setiap tanggal (1-28) di bulan berjalan</label
-            >
-            <input
-              type="number"
-              id="berulang-tanggal"
-              min="1"
-              max="28"
-              value="1"
-              required
-            />
-          </div>
-          <button type="submit" class="btn btn-primary">
-            + Tambah Transaksi Berulang
+      <div class="app-body">
+        <!-- ===== SIDEBAR KIRI ===== -->
+        <nav class="sidebar" id="sidebar-menu">
+          <button
+            type="button"
+            class="sidebar-btn active"
+            data-section="section-transaksi"
+          >
+            <span class="sidebar-icon">📊</span> Transaksi
           </button>
-        </form>
-        <div id="daftar-berulang" style="margin-top: 16px"></div>
-        <p class="empty-state" id="berulang-empty" style="display: none">
-          Belum ada transaksi berulang. Tambahkan aturan di atas, misalnya gaji
-          bulanan.
-        </p>
-      </section>
+          <button
+            type="button"
+            class="sidebar-btn"
+            data-section="section-autodebit"
+          >
+            <span class="sidebar-icon">🔄</span> Autodebit
+          </button>
+          <button type="button" class="sidebar-btn" data-section="section-plan">
+            <span class="sidebar-icon">📋</span> Financial Plan
+          </button>
+          <button
+            type="button"
+            class="sidebar-btn"
+            data-section="section-history"
+          >
+            <span class="sidebar-icon">📜</span> History
+          </button>
+          <button
+            type="button"
+            class="sidebar-btn"
+            data-section="section-wallet"
+          >
+            <span class="sidebar-icon">👛</span> Wallet
+          </button>
+        </nav>
 
-      <!-- ================= ANGGARAN BULANAN ================= -->
-      <section class="panel" id="section-plan">
-        <h2>Anggaran Bulanan <span class="muted">(bulan ini)</span></h2>
-        <form class="anggaran-form" id="form-anggaran">
-          <select id="anggaran-kategori" required></select>
-          <input
-            type="text"
-            inputmode="numeric"
-            id="anggaran-nominal"
-            placeholder="Batas, contoh: 1.000.000"
-            required
-          />
-          <button type="submit" class="btn btn-primary">+ Simpan</button>
-        </form>
-        <div id="daftar-anggaran"></div>
-        <p class="empty-state" id="anggaran-empty" style="display: none">
-          Belum ada anggaran. Tetapkan batas pengeluaran per kategori di atas.
-        </p>
-      </section>
+        <!-- ===== KONTEN KANAN ===== -->
+        <div class="content-area">
+          <!-- Transaksi + Grafik -->
+          <div class="panel-section active" id="section-transaksi">
+            <div class="main-grid">
+              <!-- ================= FORM TRANSAKSI ================= -->
+              <section class="panel">
+                <h2 id="form-heading">Tambah Transaksi</h2>
+                <form id="form-transaksi">
+                  <div class="type-toggle">
+                    <input
+                      type="radio"
+                      name="jenis"
+                      id="type-income"
+                      value="income"
+                      checked
+                    />
+                    <label for="type-income">⬆ Pemasukan</label>
+                    <input
+                      type="radio"
+                      name="jenis"
+                      id="type-expense"
+                      value="expense"
+                    />
+                    <label for="type-expense">⬇ Pengeluaran</label>
+                  </div>
 
-      <!-- ================= RIWAYAT + EKSPOR ================= -->
-      <section class="panel" id="section-history">
-        <div class="history-toolbar">
-          <h2 style="margin: 0">Riwayat Transaksi</h2>
-          <div class="export-controls">
-            <select id="select-periode" title="Rentang waktu laporan">
-              <option value="hari">Hari Ini</option>
-              <option value="minggu">Minggu</option>
-              <option value="bulan" selected>Bulan</option>
-              <option value="tahun">Tahun</option>
-              <option value="semua">Semua Transaksi</option>
-            </select>
+                  <div class="field">
+                    <label for="input-kategori">Kategori</label>
+                    <select id="input-kategori" required></select>
+                  </div>
 
-            <select id="select-format" title="Format file">
-              <option value="csv">Format CSV</option>
-              <option value="txt">Format TXT</option>
-              <option value="pdf">Format PDF</option>
-            </select>
+                  <div class="field">
+                    <label for="input-akun">Akun / Dompet</label>
+                    <select id="input-akun" required></select>
+                  </div>
 
-            <button class="btn btn-outline btn-sm" id="btn-export">
-              ⬇ Ekspor Laporan
-            </button>
-            <span class="toolbar-divider"></span>
-            <button
-              class="btn btn-outline btn-sm"
-              id="btn-backup-json"
-              title="Unduh seluruh data transaksi sebagai cadangan JSON"
-            >
-              ⬇ Backup (JSON)
-            </button>
-            <button
-              class="btn btn-outline btn-sm"
-              id="btn-impor-backup"
-              title="Pulihkan transaksi dari file cadangan JSON"
-            >
-              ⬆ Impor Backup
-            </button>
-            <input
-              type="file"
-              id="input-impor-backup"
-              accept="application/json,.json"
-              style="display: none"
-            />
+                  <div class="field">
+                    <label for="input-nominal">Nominal (Rp)</label>
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      id="input-nominal"
+                      placeholder="Contoh: 50.000"
+                      required
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label for="input-deskripsi">Keterangan</label>
+                    <input
+                      type="text"
+                      id="input-deskripsi"
+                      maxlength="80"
+                      placeholder="Contoh: Gaji bulanan"
+                      pattern=".*\S.*"
+                      title="Keterangan tidak boleh kosong atau hanya berisi spasi"
+                      required
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label for="input-tanggal">Tanggal</label>
+                    <input type="date" id="input-tanggal" required />
+                  </div>
+
+                  <div class="form-actions">
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      id="btn-submit-form"
+                    >
+                      + Simpan Transaksi
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      id="btn-batal-edit"
+                      style="display: none"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <!-- ================= GRAFIK ================= -->
+              <section class="panel">
+                <h2>Grafik Keuangan</h2>
+                <div class="chart-tabs">
+                  <button
+                    type="button"
+                    class="chart-tab active"
+                    data-tab="ringkasan"
+                  >
+                    Ringkasan
+                  </button>
+                  <button type="button" class="chart-tab" data-tab="tren">
+                    Tren Bulanan
+                  </button>
+                  <button type="button" class="chart-tab" data-tab="kategori">
+                    Per Kategori
+                  </button>
+                </div>
+
+                <div id="tab-ringkasan">
+                  <div class="chart-wrap">
+                    <canvas id="chart-ringkasan"></canvas>
+                    <p class="chart-empty" id="chart-empty-msg">
+                      Belum ada transaksi untuk ditampilkan.
+                    </p>
+                  </div>
+                </div>
+
+                <div id="tab-tren" style="display: none">
+                  <div class="chart-wrap">
+                    <canvas id="chart-tren"></canvas>
+                    <p class="chart-empty" id="chart-tren-empty-msg">
+                      Belum ada transaksi untuk ditampilkan.
+                    </p>
+                  </div>
+                </div>
+
+                <div id="tab-kategori" style="display: none">
+                  <div class="kategori-chart-toolbar">
+                    <select
+                      id="kategori-chart-jenis"
+                      title="Pilih jenis transaksi"
+                    >
+                      <option value="expense" selected>Pengeluaran</option>
+                      <option value="income">Pemasukan</option>
+                    </select>
+                  </div>
+                  <div class="chart-wrap">
+                    <canvas id="chart-kategori"></canvas>
+                    <p class="chart-empty" id="chart-kategori-empty-msg">
+                      Belum ada transaksi untuk ditampilkan.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <!-- Wallet -->
+          <div class="panel-section" id="section-wallet">
+            <section class="panel">
+              <h2>Akun / Dompet</h2>
+              <form class="akun-form" id="form-akun">
+                <input
+                  type="text"
+                  id="akun-nama-baru"
+                  maxlength="40"
+                  pattern=".*\S.*"
+                  title="Nama akun tidak boleh kosong atau hanya berisi spasi"
+                  placeholder="Nama akun, contoh: Rekening BCA"
+                  required
+                />
+                <button type="submit" class="btn btn-primary">
+                  + Tambah Akun
+                </button>
+              </form>
+              <div id="daftar-akun"></div>
+            </section>
+          </div>
+
+          <!-- Autodebit -->
+          <div class="panel-section" id="section-autodebit">
+            <section class="panel">
+              <h2>
+                Transaksi Berulang
+                <span class="muted">(otomatis setiap bulan)</span>
+              </h2>
+              <form id="form-berulang">
+                <div class="type-toggle">
+                  <input
+                    type="radio"
+                    name="jenis-berulang"
+                    id="berulang-income"
+                    value="income"
+                    checked
+                  />
+                  <label for="berulang-income">⬆ Pemasukan</label>
+                  <input
+                    type="radio"
+                    name="jenis-berulang"
+                    id="berulang-expense"
+                    value="expense"
+                  />
+                  <label for="berulang-expense">⬇ Pengeluaran</label>
+                </div>
+                <div class="field">
+                  <label for="berulang-kategori">Kategori</label>
+                  <select id="berulang-kategori" required></select>
+                </div>
+                <div class="field">
+                  <label for="berulang-akun">Akun / Dompet</label>
+                  <select id="berulang-akun" required></select>
+                </div>
+                <div class="field">
+                  <label for="berulang-nominal">Nominal (Rp)</label>
+                  <input
+                    type="text"
+                    inputmode="numeric"
+                    id="berulang-nominal"
+                    placeholder="Contoh: 5.000.000"
+                    required
+                  />
+                </div>
+                <div class="field">
+                  <label for="berulang-deskripsi">Keterangan</label>
+                  <input
+                    type="text"
+                    id="berulang-deskripsi"
+                    maxlength="80"
+                    pattern=".*\S.*"
+                    title="Keterangan tidak boleh kosong atau hanya berisi spasi"
+                    placeholder="Contoh: Gaji bulanan"
+                    required
+                  />
+                </div>
+                <div class="field">
+                  <label for="berulang-tanggal"
+                    >Setiap tanggal (1-28) di bulan berjalan</label
+                  >
+                  <input
+                    type="number"
+                    id="berulang-tanggal"
+                    min="1"
+                    max="28"
+                    value="1"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  + Tambah Transaksi Berulang
+                </button>
+              </form>
+              <div id="daftar-berulang" style="margin-top: 16px"></div>
+              <p class="empty-state" id="berulang-empty" style="display: none">
+                Belum ada transaksi berulang. Tambahkan aturan di atas, misalnya
+                gaji bulanan.
+              </p>
+            </section>
+          </div>
+
+          <!-- Financial Plan -->
+          <div class="panel-section" id="section-plan">
+            <section class="panel">
+              <h2>Anggaran Bulanan <span class="muted">(bulan ini)</span></h2>
+              <form class="anggaran-form" id="form-anggaran">
+                <select id="anggaran-kategori" required></select>
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  id="anggaran-nominal"
+                  placeholder="Batas, contoh: 1.000.000"
+                  required
+                />
+                <button type="submit" class="btn btn-primary">+ Simpan</button>
+              </form>
+              <div id="daftar-anggaran"></div>
+              <p class="empty-state" id="anggaran-empty" style="display: none">
+                Belum ada anggaran. Tetapkan batas pengeluaran per kategori di
+                atas.
+              </p>
+            </section>
+          </div>
+
+          <!-- History -->
+          <div class="panel-section" id="section-history">
+            <section class="panel">
+              <div class="history-toolbar">
+                <h2 style="margin: 0">Riwayat Transaksi</h2>
+                <div class="export-controls">
+                  <select id="select-periode" title="Rentang waktu laporan">
+                    <option value="hari">Hari Ini</option>
+                    <option value="minggu">Minggu</option>
+                    <option value="bulan" selected>Bulan</option>
+                    <option value="tahun">Tahun</option>
+                    <option value="semua">Semua Transaksi</option>
+                  </select>
+
+                  <select id="select-format" title="Format file">
+                    <option value="csv">Format CSV</option>
+                    <option value="txt">Format TXT</option>
+                    <option value="pdf">Format PDF</option>
+                  </select>
+
+                  <button class="btn btn-outline btn-sm" id="btn-export">
+                    ⬇ Ekspor Laporan
+                  </button>
+                  <span class="toolbar-divider"></span>
+                  <button
+                    class="btn btn-outline btn-sm"
+                    id="btn-backup-json"
+                    title="Unduh seluruh data transaksi sebagai cadangan JSON"
+                  >
+                    ⬇ Backup (JSON)
+                  </button>
+                  <button
+                    class="btn btn-outline btn-sm"
+                    id="btn-impor-backup"
+                    title="Pulihkan transaksi dari file cadangan JSON"
+                  >
+                    ⬆ Impor Backup
+                  </button>
+                  <input
+                    type="file"
+                    id="input-impor-backup"
+                    accept="application/json,.json"
+                    style="display: none"
+                  />
+                </div>
+              </div>
+
+              <div class="table-filter-bar">
+                <input
+                  type="search"
+                  id="cari-keterangan"
+                  placeholder="Cari keterangan..."
+                />
+                <select id="filter-jenis" title="Filter jenis transaksi">
+                  <option value="semua">Semua Jenis</option>
+                  <option value="income">Pemasukan</option>
+                  <option value="expense">Pengeluaran</option>
+                </select>
+                <select id="filter-kategori" title="Filter kategori"></select>
+                <select id="filter-akun" title="Filter akun"></select>
+              </div>
+
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-sort-key="tanggal">
+                        Tanggal<span
+                          class="sort-arrow"
+                          data-arrow="tanggal"
+                        ></span>
+                      </th>
+                      <th data-sort-key="deskripsi">
+                        Keterangan<span
+                          class="sort-arrow"
+                          data-arrow="deskripsi"
+                        ></span>
+                      </th>
+                      <th data-sort-key="kategori">
+                        Kategori<span
+                          class="sort-arrow"
+                          data-arrow="kategori"
+                        ></span>
+                      </th>
+                      <th data-sort-key="akun">
+                        Akun<span class="sort-arrow" data-arrow="akun"></span>
+                      </th>
+                      <th data-sort-key="jenis">
+                        Jenis<span class="sort-arrow" data-arrow="jenis"></span>
+                      </th>
+                      <th class="amount" data-sort-key="nominal">
+                        Nominal<span
+                          class="sort-arrow"
+                          data-arrow="nominal"
+                        ></span>
+                      </th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabel-riwayat"></tbody>
+                </table>
+                <p class="empty-state" id="empty-riwayat" style="display: none">
+                  Belum ada transaksi. Tambahkan transaksi pertamamu di form
+                  sebelah kiri.
+                </p>
+              </div>
+              <div class="paginasi" id="paginasi"></div>
+            </section>
           </div>
         </div>
-
-        <div class="table-filter-bar">
-          <input
-            type="search"
-            id="cari-keterangan"
-            placeholder="Cari keterangan..."
-          />
-          <select id="filter-jenis" title="Filter jenis transaksi">
-            <option value="semua">Semua Jenis</option>
-            <option value="income">Pemasukan</option>
-            <option value="expense">Pengeluaran</option>
-          </select>
-          <select id="filter-kategori" title="Filter kategori"></select>
-          <select id="filter-akun" title="Filter akun"></select>
-        </div>
-
-        <div class="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th data-sort-key="tanggal">
-                  Tanggal<span class="sort-arrow" data-arrow="tanggal"></span>
-                </th>
-                <th data-sort-key="deskripsi">
-                  Keterangan<span
-                    class="sort-arrow"
-                    data-arrow="deskripsi"
-                  ></span>
-                </th>
-                <th data-sort-key="kategori">
-                  Kategori<span class="sort-arrow" data-arrow="kategori"></span>
-                </th>
-                <th data-sort-key="akun">
-                  Akun<span class="sort-arrow" data-arrow="akun"></span>
-                </th>
-                <th data-sort-key="jenis">
-                  Jenis<span class="sort-arrow" data-arrow="jenis"></span>
-                </th>
-                <th class="amount" data-sort-key="nominal">
-                  Nominal<span class="sort-arrow" data-arrow="nominal"></span>
-                </th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="tabel-riwayat"></tbody>
-          </table>
-          <p class="empty-state" id="empty-riwayat" style="display: none">
-            Belum ada transaksi. Tambahkan transaksi pertamamu di form sebelah
-            kiri.
-          </p>
-        </div>
-        <div class="paginasi" id="paginasi"></div>
-      </section>
+      </div>
 
       <footer>
         Semua data disimpan secara lokal di browser ini (LocalStorage) — tidak
@@ -3437,14 +3515,22 @@
       }
 
       /* =========================================================
-                                    MENU CEPAT (SHORTCUT) — scroll halus ke section tujuan
+                                    SIDEBAR — ganti section yang tampil
                                     ========================================================= */
-      document.querySelectorAll(".shortcut-card").forEach((btn) => {
+      document.querySelectorAll(".sidebar-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const target = document.getElementById(btn.dataset.target);
-          if (target) {
-            target.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
+          const id = btn.dataset.section;
+
+          // tombol aktif
+          document
+            .querySelectorAll(".sidebar-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          // tampilkan section yang dipilih saja
+          document.querySelectorAll(".panel-section").forEach((sec) => {
+            sec.classList.toggle("active", sec.id === id);
+          });
         });
       });
 
