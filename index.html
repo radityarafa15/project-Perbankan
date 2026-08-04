@@ -20,6 +20,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js"></script>
 
     <style>
       /* =====================================================
@@ -811,6 +813,16 @@
         position: fixed;
         inset: 0;
         z-index: 9999;
+        background: var(--page-plane);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      #dekripsi-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
         background: var(--page-plane);
         display: flex;
         align-items: center;
@@ -1681,6 +1693,12 @@
         <span id="footer-pin-nonaktif" style="display: none"
           >— <a id="link-aktifkan-pin">Aktifkan kunci PIN</a></span
         >
+        <span
+          >—
+          <a id="link-aktifkan-notif" style="cursor: pointer"
+            >Aktifkan push notifikasi</a
+          ></span
+        >
       </footer>
     </main>
 
@@ -1738,6 +1756,37 @@
         <a class="pin-link" id="link-lupa-pin"
           >Lupa PIN? Reset (data tidak terhapus)</a
         >
+      </div>
+    </div>
+
+    <!-- ================= OVERLAY DEKRIPSI GAGAL ================= -->
+    <div id="dekripsi-overlay" style="display: none">
+      <div class="pin-card">
+        <h2>🔐 Data Tidak Bisa Dibuka</h2>
+        <p class="pin-sub">
+          Data keuangan di perangkat ini terenkripsi dengan PIN yang berbeda
+          dari PIN yang kamu masukkan. Ini biasanya terjadi karena PIN direset
+          atau data dipindahkan dari perangkat lain.
+        </p>
+        <p class="pin-sub">Pilih salah satu langkah berikut:</p>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 6px;
+          "
+        >
+          <button type="button" class="btn btn-primary" id="btn-coba-pin-lain">
+            Coba PIN lain
+          </button>
+          <button type="button" class="btn btn-outline" id="btn-impor-lagi">
+            Impor backup
+          </button>
+          <button type="button" class="btn btn-outline" id="btn-hapus-data">
+            Hapus data &amp; mulai ulang
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2015,7 +2064,13 @@
           if (!encryptionKey) return [];
           const encrypted = JSON.parse(raw);
           const data = await decryptData(encrypted, encryptionKey);
-          if (!data || !Array.isArray(data)) return [];
+          if (!data || !Array.isArray(data)) {
+            // Dekripsi gagal → kunci PIN tidak cocok dengan data tersimpan.
+            // Tampilkan pesan yang jelas + opsi pemulihan alih-alih diam-diam
+            // menganggap data kosong.
+            tampilkanOverlayDekripsiGagal();
+            return [];
+          }
 
           return data.map((t) => ({
             ...t,
@@ -4107,6 +4162,61 @@
         document.getElementById("pin-overlay").style.display = "none";
       }
 
+      /* =========================================================
+                                    OVERLAY DEKRIPSI GAGAL — muncul saat kunci PIN tidak cocok
+                                    dengan data terenkripsi yang tersimpan. Menawarkan 3 opsi:
+                                    coba PIN lain, impor backup, atau hapus data & mulai ulang.
+                                    ========================================================= */
+      function tampilkanOverlayDekripsiGagal() {
+        document.getElementById("dekripsi-overlay").style.display = "flex";
+      }
+      function sembunyikanOverlayDekripsiGagal() {
+        document.getElementById("dekripsi-overlay").style.display = "none";
+      }
+
+      // Hapus seluruh data lokal & mulai ulang. Hanya dipakai sebagai jalan keluar
+      // terakhir saat dekripsi gagal (PIN tidak cocok dengan data tersimpan).
+      function hapusSemuaDataLokal() {
+        if (
+          !confirm(
+            "Hapus SEMUA data di browser ini? (transaksi, akun, anggaran, kategori, PIN). Tindakan ini tidak bisa dibatalkan.",
+          )
+        )
+          return;
+        [
+          STORAGE_KEY,
+          ANGGARAN_KEY,
+          AKUN_KEY,
+          BERULANG_KEY,
+          KATEGORI_KEY,
+          THEME_KEY,
+          PIN_HASH_KEY,
+          PIN_SALT_KEY,
+          PIN_SKIPPED_KEY,
+          "catatan_keuangan_fcm_token",
+        ].forEach((k) => localStorage.removeItem(k));
+        encryptionKey = null;
+        transaksi = [];
+        location.reload();
+      }
+
+      document
+        .getElementById("btn-coba-pin-lain")
+        ?.addEventListener("click", () => {
+          sembunyikanOverlayDekripsiGagal();
+          tampilkanOverlayPin("masuk");
+        });
+      document
+        .getElementById("btn-impor-lagi")
+        ?.addEventListener("click", () => {
+          sembunyikanOverlayDekripsiGagal();
+          // Buka file picker impor backup tersembunyi
+          document.getElementById("input-impor-backup").click();
+        });
+      document
+        .getElementById("btn-hapus-data")
+        ?.addEventListener("click", hapusSemuaDataLokal);
+
       // Dipanggil setiap kali overlay berhasil dilewati (PIN benar, baru dibuat, atau dilewati)
       async function bukaAplikasi() {
         sembunyikanOverlayPin();
@@ -4115,6 +4225,9 @@
         await prosesTransaksiBerulang();
         await renderSemua();
         renderDaftarKategoriCustom();
+        initFirebaseMessaging();
+        pasangListenerFCMForeground();
+        updateTampilanLinkNotif();
       }
       document
         .getElementById("form-pin-buat")
@@ -4232,6 +4345,142 @@
           localStorage.setItem(PIN_SKIPPED_KEY, "1");
           perbaruiUiKuncPin();
           tampilkanToast("Kunci PIN dinonaktifkan.", "sukses");
+        });
+
+      /* =========================================================
+                                    FIREBASE CLOUD MESSAGING (PUSH NOTIFIKASI) — opsional.
+                                    Ganti nilai firebaseConfig & VAPID_KEY dengan milikmu
+                                    dari Firebase Console → Project Settings → Cloud Messaging.
+                                    ========================================================= */
+      const firebaseConfig = {
+        apiKey: "AIzaSyAs-Ki2X_J5idzbwPxllXewGokmyqgYRaA",
+        authDomain: "perbankan-97923.firebaseapp.com",
+        projectId: "perbankan-97923",
+        storageBucket: "perbankan-97923.firebasestorage.app",
+        messagingSenderId: "352281881126",
+        appId: "1:352281881126:web:0e7233d52a5551d0b8d4e7",
+        measurementId: "G-Y41L293BYY",
+      };
+
+      const VAPID_KEY =
+        "BN6rz1ZQZ2KaG9UROYSHCI1THcdNpGXoFs2NDiEQ7Z7s8X9eFWq3_UIe_UyKoKkfBKr7mnn5aTvBiD7uRlJqbxA";
+
+      let messaging = null;
+
+      function firebaseConfigSiap() {
+        const nilaiConfig = Object.values(firebaseConfig);
+        return (
+          nilaiConfig.every(
+            (value) => value && !String(value).startsWith("GANTI_"),
+          ) && !VAPID_KEY.includes("GANTI_")
+        );
+      }
+
+      function initFirebaseMessaging() {
+        if (!firebase?.messaging) return;
+        if (!firebaseConfigSiap()) {
+          console.warn(
+            "Firebase config atau VAPID key belum diisi. FCM dinonaktifkan sampai nilai produksi ditambahkan.",
+          );
+          return;
+        }
+        try {
+          if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+          messaging = firebase.messaging();
+        } catch (err) {
+          console.warn("Firebase init gagal:", err);
+        }
+      }
+
+      async function daftarFCM() {
+        if (!messaging) initFirebaseMessaging();
+        if (!messaging) {
+          tampilkanToast(
+            "Firebase Messaging belum siap. Isi firebaseConfig dan VAPID key dulu.",
+            "peringatan",
+          );
+          return null;
+        }
+
+        const izin = await Notification.requestPermission();
+        if (izin !== "granted") {
+          tampilkanToast("Izin notifikasi ditolak.", "peringatan");
+          return null;
+        }
+
+        try {
+          // Pastikan SW Firebase terdaftar
+          const reg = await navigator.serviceWorker.register(
+            "./firebase-messaging-sw.js",
+          );
+          await navigator.serviceWorker.ready;
+
+          const token = await messaging.getToken({
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: reg,
+          });
+
+          if (token) {
+            localStorage.setItem("catatan_keuangan_fcm_token", token);
+            console.log("FCM token:", token);
+            tampilkanToast("Push notifikasi siap.", "sukses");
+            return token;
+          }
+        } catch (err) {
+          console.error("Gagal ambil FCM token:", err);
+          tampilkanToast("Gagal mendaftar push notifikasi.", "peringatan");
+        }
+        return null;
+      }
+
+      // Listener pesan saat app sedang dibuka
+      function pasangListenerFCMForeground() {
+        if (!messaging) return;
+        messaging.onMessage((payload) => {
+          const title = payload.notification?.title || "SMoney";
+          const body = payload.notification?.body || "";
+          tampilkanNotifikasi(title, body, "fcm-foreground");
+        });
+      }
+
+      // Menampilkan notifikasi browser saat app sedang dibuka (foreground)
+      function tampilkanNotifikasi(title, body = "", jenis = "sukses") {
+        if ("Notification" in window && Notification.permission === "granted") {
+          // Tampilkan notifikasi browser + toast sebagai fallback
+          try {
+            const n = new Notification(title, {
+              body,
+              icon: "./android-chrome-192x192.png",
+              badge: "./android-chrome-192x192.png",
+            });
+            n.onclick = () => {
+              window.focus();
+              n.close();
+            };
+          } catch (_) {}
+        }
+        if (body) tampilkanToast(`${title}: ${body}`, jenis);
+      }
+
+      // Perbarui tampilan link notifikasi di footer berdasarkan status izin
+      function updateTampilanLinkNotif() {
+        const link = document.getElementById("link-aktifkan-notif");
+        if (!link) return;
+        const granted =
+          "Notification" in window && Notification.permission === "granted";
+        link.textContent = granted
+          ? "Aktifkan kembali push notifikasi"
+          : "Aktifkan push notifikasi";
+      }
+
+      document
+        .getElementById("link-aktifkan-notif")
+        ?.addEventListener("click", async (e) => {
+          e.preventDefault();
+          initFirebaseMessaging();
+          await daftarFCM();
+          pasangListenerFCMForeground();
+          updateTampilanLinkNotif();
         });
 
       /* =========================================================
