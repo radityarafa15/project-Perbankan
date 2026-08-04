@@ -1,17 +1,35 @@
-# TODO — Layout Sidebar + Section Panel (index.html)
+# TODO — Fitur Tambahan (index.html + service-worker.js)
 
-- [x] 1. Tambah CSS layout sidebar (.app-body, .sidebar, .sidebar-btn, .content-area, .panel-section)
-- [x] 2. Bungkus dashboard dengan .dashboard-wrap
-- [x] 3. Ganti blok shortcut jadi .app-body + sidebar nav (5 tombol menu)
-- [x] 4. Bungkus tiap section dengan div.panel-section + id:
-  - section-transaksi (Form + Grafik, aktif)
-  - section-wallet (Akun / Dompet)
-  - section-autodebit (Transaksi Berulang)
-  - section-plan (Anggaran Bulanan)
-  - section-history (Riwayat Transaksi)
-- [x] 5. Tambah JS handler .sidebar-btn → toggle .panel-section.active
-- [x] 6. Verifikasi struktur HTML (kurung div seimbang)
-- [x] 7. Update CSS responsive device:
-  - Default desktop: sidebar kiri sticky
-  - @media <=860px: sidebar jadi baris horizontal wrap di atas konten, dashboard 1 kolom
-  - @media <=480px: padding 12px, tombol menu 2 kolom, nilai kartu 20px
+## Done — Transfer Antar Dompet
+
+- [x] 1. HTML form transfer di #section-wallet
+- [x] 2. JS isi opsi akun transfer
+- [x] 3. JS logika transfer + format nominal
+- [x] 4. hitungRingkasan abai transfer saat "Semua Akun"
+- [x] 5. hapusTransaksi berpasangan (transferPairId)
+- [x] 6. renderTabel label "Transfer" + badge netral
+
+## Done — Point 2: Kategori Custom
+
+- [x] A. Tambah KATEGORI_KEY
+- [x] B. Ganti KATEGORI → KATEGORI_DEFAULT + loader muatKategori/simpanKategori
+- [x] C. HTML form "Kelola Kategori" (details) di section transaksi
+- [x] D. JS renderDaftarKategoriCustom + refreshSemuaOpsiKategori + submit handler
+- [x] Panggil muatKategori() di bukaAplikasi() & init(); renderDaftarKategoriCustom() di bukaAplikasi()
+
+## Done — Point 5: Filter Tanggal Custom (Export)
+
+- [x] A. HTML opsi "Custom" + input rentang (export-dari / export-sampai)
+- [x] B. JS show/hide wrap-tanggal-custom saat custom dipilih
+- [x] C. Tambah cabang "custom" di ambilRentangPeriode
+- [x] D. Label + validasi + nama file custom di eksporLaporan
+
+## Done — Point 6: Bump Service Worker
+
+- [x] Update service-worker.js → CACHE_NAME "smoney-v2", ASSETS pakai android-chrome-\*.png, fetch hanya cache GET + ok
+- [x] Registrasi SW di index.html sudah ada
+
+## Verifikasi
+
+- [ ] Buka di browser, cek console tidak ada error
+- [ ] Chrome: Application → Service Workers → Unregister sekali, lalu refresh (v2 aktif)

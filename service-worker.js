@@ -1,10 +1,10 @@
-const CACHE_NAME = "smoney-v1";
+const CACHE_NAME = "smoney-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png",
+  "./android-chrome-192x192.png",
+  "./android-chrome-512x512.png",
   "https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js",
   "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",
   "https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js",
@@ -39,7 +39,9 @@ self.addEventListener("fetch", (event) => {
       .then((response) => {
         const clone = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, clone);
+          if (event.request.method === "GET" && response.ok) {
+            cache.put(event.request, clone);
+          }
         });
         return response;
       })

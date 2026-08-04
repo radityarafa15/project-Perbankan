@@ -508,6 +508,10 @@
         background: var(--danger-bg);
         color: var(--critical);
       }
+      .badge.transfer {
+        background: rgba(42, 120, 214, 0.12);
+        color: var(--accent);
+      }
 
       .table-scroll {
         overflow-x: auto;
@@ -1267,6 +1271,39 @@
                 </form>
               </section>
 
+              <!-- ================= KELOLA KATEGORI ================= -->
+              <details class="panel" style="margin-top: 12px; padding: 14px">
+                <summary style="cursor: pointer; font-weight: 600">
+                  + Kelola Kategori
+                </summary>
+                <form id="form-kategori" style="margin-top: 12px">
+                  <div class="field">
+                    <label for="kategori-jenis">Jenis</label>
+                    <select id="kategori-jenis">
+                      <option value="income">Pemasukan</option>
+                      <option value="expense">Pengeluaran</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="kategori-nama">Nama kategori baru</label>
+                    <input
+                      type="text"
+                      id="kategori-nama"
+                      maxlength="40"
+                      placeholder="Contoh: Langganan"
+                      required
+                    />
+                  </div>
+                  <button type="submit" class="btn btn-outline btn-sm">
+                    Tambah Kategori
+                  </button>
+                </form>
+                <div
+                  id="daftar-kategori-custom"
+                  style="margin-top: 12px; font-size: 13px"
+                ></div>
+              </details>
+
               <!-- ================= GRAFIK ================= -->
               <section class="panel">
                 <h2>Grafik Keuangan</h2>
@@ -1344,6 +1381,64 @@
                 </button>
               </form>
               <div id="daftar-akun"></div>
+
+              <hr
+                style="
+                  border: none;
+                  border-top: 1px solid var(--border);
+                  margin: 20px 0;
+                "
+              />
+
+              <h2>Transfer Antar Dompet</h2>
+              <p
+                class="muted"
+                style="margin-top: -8px; margin-bottom: 14px; font-size: 13px"
+              >
+                Pindahkan saldo dari satu akun ke akun lain. Otomatis tercatat
+                di kedua sisi.
+              </p>
+
+              <form id="form-transfer">
+                <div class="field">
+                  <label for="transfer-dari">Dari Akun</label>
+                  <select id="transfer-dari" required></select>
+                </div>
+                <div class="field">
+                  <label for="transfer-ke">Ke Akun</label>
+                  <select id="transfer-ke" required></select>
+                </div>
+                <div class="field">
+                  <label for="transfer-nominal">Nominal (Rp)</label>
+                  <input
+                    type="text"
+                    id="transfer-nominal"
+                    inputmode="numeric"
+                    placeholder="Contoh: 50.000"
+                    required
+                  />
+                </div>
+                <div class="field">
+                  <label for="transfer-deskripsi">Keterangan (opsional)</label>
+                  <input
+                    type="text"
+                    id="transfer-deskripsi"
+                    placeholder="Contoh: Tarik tunai / top up"
+                    maxlength="120"
+                  />
+                </div>
+                <div class="field">
+                  <label for="transfer-tanggal">Tanggal</label>
+                  <input type="date" id="transfer-tanggal" required />
+                </div>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  style="width: 100%; margin-top: 8px"
+                >
+                  ⇄ Transfer
+                </button>
+              </form>
             </section>
           </div>
 
@@ -1462,7 +1557,21 @@
                     <option value="bulan" selected>Bulan</option>
                     <option value="tahun">Tahun</option>
                     <option value="semua">Semua Transaksi</option>
+                    <option value="custom">Custom (pilih tanggal)</option>
                   </select>
+
+                  <span
+                    id="wrap-tanggal-custom"
+                    style="display: none; gap: 6px; align-items: center"
+                  >
+                    <input type="date" id="export-dari" title="Dari tanggal" />
+                    <span class="muted">s/d</span>
+                    <input
+                      type="date"
+                      id="export-sampai"
+                      title="Sampai tanggal"
+                    />
+                  </span>
 
                   <select id="select-format" title="Format file">
                     <option value="csv">Format CSV</option>
@@ -1641,6 +1750,7 @@
       const ANGGARAN_KEY = "catatan_keuangan_anggaran";
       const AKUN_KEY = "catatan_keuangan_akun";
       const BERULANG_KEY = "catatan_keuangan_berulang";
+      const KATEGORI_KEY = "catatan_keuangan_kategori";
       const AKUN_DEFAULT = "Dompet Utama";
       const PIN_HASH_KEY = "catatan_keuangan_pin_hash";
       const PIN_SALT_KEY = "catatan_keuangan_pin_salt";
@@ -1735,7 +1845,7 @@
       }
 
       // Daftar kategori, berbeda untuk pemasukan vs pengeluaran
-      const KATEGORI = {
+      const KATEGORI_DEFAULT = {
         income: ["Gaji", "Bonus", "Investasi", "Hadiah", "Lainnya"],
         expense: [
           "Makanan & Minuman",
@@ -1748,6 +1858,25 @@
           "Lainnya",
         ],
       };
+
+      let KATEGORI = {
+        income: [...KATEGORI_DEFAULT.income],
+        expense: [...KATEGORI_DEFAULT.expense],
+      };
+
+      function muatKategori() {
+        try {
+          const raw = localStorage.getItem(KATEGORI_KEY);
+          if (!raw) return;
+          const data = JSON.parse(raw);
+          if (data?.income?.length) KATEGORI.income = data.income;
+          if (data?.expense?.length) KATEGORI.expense = data.expense;
+        } catch (_) {}
+      }
+
+      function simpanKategori() {
+        localStorage.setItem(KATEGORI_KEY, JSON.stringify(KATEGORI));
+      }
 
       // Mengisi ulang <select> kategori sesuai jenis transaksi yang aktif.
       // idSelect memungkinkan fungsi ini dipakai ulang oleh form transaksi & form transaksi berulang.
@@ -1765,6 +1894,83 @@
           select.value = kategoriTerpilih;
         }
       }
+
+      // Menampilkan daftar kategori custom (yang bukan bawaan) beserta tombol hapusnya
+      function renderDaftarKategoriCustom() {
+        const wrap = document.getElementById("daftar-kategori-custom");
+        if (!wrap) return;
+
+        const customIncome = KATEGORI.income.filter(
+          (k) => !KATEGORI_DEFAULT.income.includes(k),
+        );
+        const customExpense = KATEGORI.expense.filter(
+          (k) => !KATEGORI_DEFAULT.expense.includes(k),
+        );
+
+        if (!customIncome.length && !customExpense.length) {
+          wrap.innerHTML = '<p class="muted">Belum ada kategori custom.</p>';
+          return;
+        }
+
+        let html = "";
+        [
+          ...customIncome.map((k) => ({ k, jenis: "income" })),
+          ...customExpense.map((k) => ({ k, jenis: "expense" })),
+        ].forEach(({ k, jenis }) => {
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+              <span>${jenis === "income" ? "⬆" : "⬇"} ${escapeHTML(k)}</span>
+              <button type="button" class="btn btn-outline btn-sm btn-hapus-kategori" data-jenis="${jenis}" data-nama="${escapeHTML(k)}">Hapus</button>
+            </div>`;
+        });
+        wrap.innerHTML = html;
+
+        wrap.querySelectorAll(".btn-hapus-kategori").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const jenis = btn.dataset.jenis;
+            const nama = btn.dataset.nama;
+            KATEGORI[jenis] = KATEGORI[jenis].filter((x) => x !== nama);
+            simpanKategori();
+            refreshSemuaOpsiKategori();
+            renderDaftarKategoriCustom();
+            tampilkanToast("Kategori dihapus.", "sukses");
+          });
+        });
+      }
+
+      // Menyegarkan semua dropdown kategori (form transaksi, berulang, filter, anggaran)
+      function refreshSemuaOpsiKategori() {
+        const jenisAktif =
+          document.querySelector('input[name="jenis"]:checked')?.value ||
+          "income";
+        isiOpsiKategori(jenisAktif);
+        isiOpsiKategori(
+          document.querySelector('input[name="jenis-berulang"]:checked')
+            ?.value || "income",
+          null,
+          "berulang-kategori",
+        );
+        isiOpsiFilterKategori();
+        isiOpsiAnggaranKategori();
+      }
+
+      document
+        .getElementById("form-kategori")
+        ?.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const jenis = document.getElementById("kategori-jenis").value;
+          const nama = document.getElementById("kategori-nama").value.trim();
+          if (!nama) return;
+          if (KATEGORI[jenis].includes(nama)) {
+            tampilkanToast("Kategori sudah ada.", "peringatan");
+            return;
+          }
+          KATEGORI[jenis].push(nama);
+          simpanKategori();
+          e.target.reset();
+          refreshSemuaOpsiKategori();
+          renderDaftarKategoriCustom();
+          tampilkanToast(`Kategori "${nama}" ditambahkan.`, "sukses");
+        });
 
       let transaksi = []; // array berisi semua transaksi
       let chartRingkasan = null;
@@ -1844,12 +2050,27 @@
                                     RENDER: DASHBOARD SALDO
                                     ========================================================= */
       function hitungRingkasan(daftar = transaksi) {
+        // Saat melihat semua akun, transfer diabaikan agar tidak menggandakan
+        // pemasukan & pengeluaran. Saat filter 1 akun, transfer tetap dihitung
+        // supaya saldo akun itu benar.
+        const abaikanTransfer = filterAkun === "semua";
+
         const totalIncome = daftar
-          .filter((t) => t.jenis === "income")
+          .filter(
+            (t) =>
+              t.jenis === "income" &&
+              (!abaikanTransfer || t.kategori !== "Transfer"),
+          )
           .reduce((sum, t) => sum + t.nominal, 0);
+
         const totalExpense = daftar
-          .filter((t) => t.jenis === "expense")
+          .filter(
+            (t) =>
+              t.jenis === "expense" &&
+              (!abaikanTransfer || t.kategori !== "Transfer"),
+          )
           .reduce((sum, t) => sum + t.nominal, 0);
+
         return { totalIncome, totalExpense, saldo: totalIncome - totalExpense };
       }
 
@@ -2010,7 +2231,12 @@
 
         halamanIni.forEach((t) => {
           const tr = document.createElement("tr");
-          const labelJenis = t.jenis === "income" ? "Pemasukan" : "Pengeluaran";
+          const labelJenis =
+            t.kategori === "Transfer"
+              ? "Transfer"
+              : t.jenis === "income"
+                ? "Pemasukan"
+                : "Pengeluaran";
           const tanda = t.jenis === "income" ? "+" : "-";
 
           tr.innerHTML = `
@@ -2018,7 +2244,7 @@
                                        <td>${escapeHTML(t.deskripsi)}</td>
                                        <td>${escapeHTML(t.kategori)}</td>
                                        <td>${escapeHTML(t.akun)}</td>
-                                       <td><span class="badge ${t.jenis}">${labelJenis}</span></td>
+                                       <td><span class="badge ${t.kategori === "Transfer" ? "transfer" : t.jenis}">${labelJenis}</span></td>
                                        <td class="amount">${tanda} ${formatRupiah(t.nominal)}</td>
                                        <td style="text-align:right; white-space:nowrap;">
                                          <button class="edit-btn" data-id="${t.id}" title="Edit transaksi" aria-label="Edit transaksi">
@@ -2219,6 +2445,8 @@
         await renderAkun();
         await isiOpsiAkun("input-akun");
         await isiOpsiAkun("berulang-akun");
+        await isiOpsiAkun("transfer-dari");
+        await isiOpsiAkun("transfer-ke");
         await isiOpsiFilterAkun();
       }
 
@@ -2244,6 +2472,8 @@
           await renderAkun();
           await isiOpsiAkun("input-akun", nama);
           await isiOpsiAkun("berulang-akun", nama);
+          await isiOpsiAkun("transfer-dari", nama);
+          await isiOpsiAkun("transfer-ke", nama);
           await isiOpsiFilterAkun();
           e.target.reset();
           tampilkanToast(
@@ -3066,13 +3296,112 @@
         .addEventListener("click", batalEdit);
 
       async function hapusTransaksi(id) {
-        if (!confirm("Hapus transaksi ini?")) return;
-        if (id === editingId) batalEdit();
-        transaksi = transaksi.filter((t) => t.id !== id);
+        const t = transaksi.find((x) => x.id === id);
+        if (!t) return;
+
+        if (
+          !confirm(
+            t.transferPairId
+              ? "Hapus transfer ini? Kedua sisi (keluar & masuk) akan dihapus."
+              : "Hapus transaksi ini?",
+          )
+        ) {
+          return;
+        }
+
+        if (t.transferPairId) {
+          transaksi = transaksi.filter(
+            (x) => x.transferPairId !== t.transferPairId,
+          );
+        } else {
+          transaksi = transaksi.filter((x) => x.id !== id);
+        }
+
         await simpanTransaksi();
         await renderSemua();
-        tampilkanToast("Transaksi berhasil dihapus.", "sukses");
+        tampilkanToast("Transaksi dihapus.", "sukses");
       }
+
+      /* =========================================================
+                                    TRANSFER ANTAR DOMPET — membuat 2 transaksi sekaligus
+                                    (keluar dari akun sumber + masuk ke akun tujuan) yang
+                                    ditautkan lewat transferPairId. Diabaikan saat melihat
+                                    "Semua Akun" supaya tidak menggelembungkan total.
+                                    ========================================================= */
+      pasangFormatOtomatis("transfer-nominal");
+
+      document.getElementById("transfer-tanggal").value = hariIniISO();
+
+      document
+        .getElementById("form-transfer")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const dari = document.getElementById("transfer-dari").value;
+          const ke = document.getElementById("transfer-ke").value;
+          const inputNominal = document.getElementById("transfer-nominal");
+          inputNominal.setCustomValidity("");
+          const nominal = angkaMurniDariInput(inputNominal.value);
+          const deskripsi = document
+            .getElementById("transfer-deskripsi")
+            .value.trim();
+          const tanggal = document.getElementById("transfer-tanggal").value;
+
+          if (!nominal || nominal <= 0) {
+            inputNominal.setCustomValidity("Nominal harus lebih dari 0.");
+          }
+          if (dari === ke) {
+            document
+              .getElementById("transfer-ke")
+              .setCustomValidity("Akun tujuan harus berbeda.");
+          } else {
+            document.getElementById("transfer-ke").setCustomValidity("");
+          }
+
+          if (!e.target.checkValidity()) {
+            e.target.reportValidity();
+            return;
+          }
+
+          const pairId =
+            Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+          const ket = deskripsi || `Transfer ${dari} → ${ke}`;
+
+          // Keluar dari akun sumber
+          transaksi.push({
+            id: pairId + "-out",
+            jenis: "expense",
+            kategori: "Transfer",
+            akun: dari,
+            nominal,
+            deskripsi: ket,
+            tanggal,
+            transferPairId: pairId,
+          });
+
+          // Masuk ke akun tujuan
+          transaksi.push({
+            id: pairId + "-in",
+            jenis: "income",
+            kategori: "Transfer",
+            akun: ke,
+            nominal,
+            deskripsi: ket,
+            tanggal,
+            transferPairId: pairId,
+          });
+
+          await simpanTransaksi();
+          e.target.reset();
+          document.getElementById("transfer-tanggal").value = hariIniISO();
+          await isiOpsiAkun("transfer-dari");
+          await isiOpsiAkun("transfer-ke");
+          await renderSemua();
+          tampilkanToast(
+            `Transfer ${formatRupiah(nominal)}: ${dari} → ${ke}`,
+            "sukses",
+          );
+        });
 
       /* =========================================================
                                     EKSPOR LAPORAN (CSV / TXT) DENGAN FILTER RENTANG WAKTU
@@ -3083,7 +3412,21 @@
         const now = new Date();
         let mulai, selesai;
 
-        if (periode === "hari") {
+        if (periode === "custom") {
+          const dari = document.getElementById("export-dari").value;
+          const sampai = document.getElementById("export-sampai").value;
+          if (!dari || !sampai) {
+            return { mulai: null, selesai: null };
+          }
+          mulai = new Date(dari + "T00:00:00");
+          selesai = new Date(sampai + "T23:59:59");
+          if (mulai > selesai) {
+            // tukar jika terbalik
+            const tmp = mulai;
+            mulai = new Date(sampai + "T00:00:00");
+            selesai = new Date(dari + "T23:59:59");
+          }
+        } else if (periode === "hari") {
           // Hari ini: 00:00 – 23:59
           mulai = new Date(
             now.getFullYear(),
@@ -3308,13 +3651,23 @@
         const format = document.getElementById("select-format").value;
         const labelPeriode = {
           hari: "Hari Ini",
-          minggu: " Minggu",
-          bulan: " Bulan",
-          tahun: " Tahun",
+          minggu: "Per Minggu",
+          bulan: "Per Bulan",
+          tahun: "Per Tahun",
           semua: "Semua Transaksi",
+          custom: "Custom",
         }[periode];
 
         const { mulai, selesai } = ambilRentangPeriode(periode);
+
+        if (!mulai || !selesai) {
+          tampilkanToast(
+            "Isi tanggal Dari dan Sampai untuk rentang custom.",
+            "peringatan",
+          );
+          return;
+        }
+
         const terfilter = transaksi
           .filter((t) => {
             const d = new Date(t.tanggal + "T00:00:00");
@@ -3331,16 +3684,20 @@
         }
 
         const tanggalFile = hariIniISO();
+        const labelFile =
+          periode === "custom"
+            ? `${document.getElementById("export-dari").value}_sd_${document.getElementById("export-sampai").value}`
+            : periode;
         if (format === "csv") {
           unduhFile(
             buatKontenCSV(terfilter),
-            `laporan-keuangan-${periode}-${tanggalFile}.csv`,
+            `laporan-keuangan-${labelFile}-${tanggalFile}.csv`,
             "text/csv;charset=utf-8;",
           );
         } else if (format === "txt") {
           unduhFile(
             buatKontenTXT(terfilter, labelPeriode, mulai, selesai),
-            `laporan-keuangan-${periode}-${tanggalFile}.txt`,
+            `laporan-keuangan-${labelFile}-${tanggalFile}.txt`,
             "text/plain;charset=utf-8;",
           );
         } else if (format === "pdf") {
@@ -3351,6 +3708,27 @@
       document
         .getElementById("btn-export")
         .addEventListener("click", eksporLaporan);
+
+      // Tampilkan/sembunyikan input tanggal custom saat periode "Custom" dipilih
+      document
+        .getElementById("select-periode")
+        .addEventListener("change", (e) => {
+          const wrap = document.getElementById("wrap-tanggal-custom");
+          wrap.style.display =
+            e.target.value === "custom" ? "inline-flex" : "none";
+          if (e.target.value === "custom") {
+            const sekarang = hariIniISO();
+            if (!document.getElementById("export-dari").value) {
+              // default: awal bulan ini
+              const d = new Date();
+              document.getElementById("export-dari").value =
+                `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+            }
+            if (!document.getElementById("export-sampai").value) {
+              document.getElementById("export-sampai").value = sekarang;
+            }
+          }
+        });
 
       /* =========================================================
                                     BACKUP & RESTORE DATA (JSON) — terpisah dari laporan CSV/TXT,
@@ -3732,9 +4110,11 @@
       // Dipanggil setiap kali overlay berhasil dilewati (PIN benar, baru dibuat, atau dilewati)
       async function bukaAplikasi() {
         sembunyikanOverlayPin();
+        muatKategori(); // muat kategori custom sebelum dropdown diisi
         transaksi = await muatTransaksi(); // ← load di sini
         await prosesTransaksiBerulang();
         await renderSemua();
+        renderDaftarKategoriCustom();
       }
       document
         .getElementById("form-pin-buat")
@@ -3861,12 +4241,15 @@
         const temaTersimpan = localStorage.getItem(THEME_KEY);
         if (temaTersimpan) terapkanTema(temaTersimpan);
 
+        muatKategori(); // muat kategori custom sebelum dropdown diisi
         isiOpsiKategori("income");
         isiOpsiKategori("income", null, "berulang-kategori");
         isiOpsiFilterKategori();
         isiOpsiAnggaranKategori();
         isiOpsiAkun("input-akun");
         isiOpsiAkun("berulang-akun");
+        isiOpsiAkun("transfer-dari");
+        isiOpsiAkun("transfer-ke");
         isiOpsiFilterAkun();
         document.getElementById("input-tanggal").value = hariIniISO();
         document.getElementById("berulang-tanggal").value = 1;
