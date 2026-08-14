@@ -905,77 +905,41 @@
       }
 
       /* =====================================================
-     LAYOUT SIDEBAR + KONTEN — responsive device
+     LAYOUT KONTEN (tanpa sidebar) — responsive device
      ===================================================== */
-      /* Default: desktop — sidebar kiri */
+      /* Konten full lebar (tanpa sidebar) */
       .app-body {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-      }
-
-      .sidebar {
-        width: 200px;
-        flex-shrink: 0;
-        background: var(--surface-1);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 12px;
-        box-shadow: var(--shadow);
-        position: sticky;
-        top: 20px;
-      }
-
-      .sidebar-btn {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        padding: 12px 14px;
-        margin-bottom: 6px;
-        border: none;
-        border-radius: 10px;
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 13.5px;
-        font-weight: 500;
-        font-family: inherit;
-        cursor: pointer;
-        text-align: left;
-      }
-
-      .sidebar-btn:hover {
-        background: var(--page-plane);
-        color: var(--text-primary);
-      }
-
-      .sidebar-btn.active {
-        background: rgba(42, 120, 214, 0.12);
-        color: var(--accent);
-        font-weight: 600;
-      }
-
-      .sidebar-icon {
-        font-size: 18px;
-        width: 24px;
-        text-align: center;
+        display: block;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 24px 24px;
       }
 
       .content-area {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+        width: 100%;
       }
 
-      /* Sembunyikan section yang tidak aktif */
+      /* Section: sembunyi + animasi masuk */
       .panel-section {
         display: none;
+        opacity: 0;
+        transform: translateY(12px);
       }
 
       .panel-section.active {
         display: block;
+        animation: sectionIn 0.28s ease forwards;
+      }
+
+      @keyframes sectionIn {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
       /* Dashboard selalu di atas konten (opsional) */
@@ -985,32 +949,6 @@
 
       /* HP & tablet kecil */
       @media (max-width: 860px) {
-        .app-body {
-          flex-direction: column; /* sidebar di atas, konten di bawah */
-        }
-
-        .sidebar {
-          width: 100%;
-          position: static;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          padding: 10px;
-        }
-
-        .sidebar-btn {
-          flex: 1 1 auto;
-          min-width: 120px;
-          margin-bottom: 0;
-          justify-content: center;
-          font-size: 12.5px;
-          padding: 10px 8px;
-        }
-
-        .sidebar-btn .sidebar-icon {
-          font-size: 16px;
-        }
-
         /* Kartu dashboard 1 kolom di HP sangat kecil */
         .dashboard {
           grid-template-columns: 1fr;
@@ -1022,10 +960,6 @@
         main,
         .app-body {
           padding: 12px;
-        }
-
-        .sidebar-btn {
-          min-width: calc(50% - 6px); /* 2 kolom menu */
         }
 
         .stat-card .value {
@@ -1083,6 +1017,7 @@
         font-size: 22px;
       }
 
+      /* Dropdown hamburger: animasi buka */
       .nav-menu-dropdown {
         position: absolute;
         top: calc(100% + 6px);
@@ -1097,10 +1032,30 @@
         display: flex;
         flex-direction: column;
         gap: 2px;
+        transform-origin: top left;
+        animation: menuIn 0.18s ease;
       }
 
       .nav-menu-dropdown[hidden] {
         display: none;
+      }
+
+      @keyframes menuIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95) translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      /* Item aktif di menu hamburger */
+      .nav-menu-item.active {
+        background: rgba(42, 120, 214, 0.12);
+        color: var(--accent);
+        font-weight: 600;
       }
 
       .nav-menu-item {
@@ -1294,42 +1249,6 @@
       </div>
 
       <div class="app-body">
-        <!-- ===== SIDEBAR KIRI ===== -->
-        <nav class="sidebar" id="sidebar-menu">
-          <button
-            type="button"
-            class="sidebar-btn active"
-            data-section="section-transaksi"
-          >
-            <span class="sidebar-icon">📊</span> Transaksi
-          </button>
-          <button
-            type="button"
-            class="sidebar-btn"
-            data-section="section-autodebit"
-          >
-            <span class="sidebar-icon">🔄</span> Autodebit
-          </button>
-          <button type="button" class="sidebar-btn" data-section="section-plan">
-            <span class="sidebar-icon">📋</span> Financial Plan
-          </button>
-          <button
-            type="button"
-            class="sidebar-btn"
-            data-section="section-history"
-          >
-            <span class="sidebar-icon">📜</span> History
-          </button>
-          <button
-            type="button"
-            class="sidebar-btn"
-            data-section="section-wallet"
-          >
-            <span class="sidebar-icon">👛</span> Wallet
-          </button>
-        </nav>
-
-        <!-- ===== KONTEN KANAN ===== -->
         <div class="content-area">
           <!-- Transaksi + Grafik -->
           <div class="panel-section active" id="section-transaksi">
@@ -4109,25 +4028,7 @@
         }
       }
 
-      /* =========================================================
-                                    SIDEBAR — ganti section yang tampil
-                                    ========================================================= */
-      document.querySelectorAll(".sidebar-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const id = btn.dataset.section;
 
-          // tombol aktif
-          document
-            .querySelectorAll(".sidebar-btn")
-            .forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-
-          // tampilkan section yang dipilih saja
-          document.querySelectorAll(".panel-section").forEach((sec) => {
-            sec.classList.toggle("active", sec.id === id);
-          });
-        });
-      });
 
       document.getElementById("btn-theme").addEventListener("click", () => {
         const sekarangGelap =
@@ -4654,48 +4555,63 @@
         });
       }
       /* =========================================================
-                                    NAV MENU (HAMBURGER) — buka/tutup + navigasi
+                                    NAV MENU (HAMBURGER) — buka/tutup + navigasi + animasi
                                     ========================================================= */
       (function initNavMenu() {
         const btn = document.getElementById("btn-nav-menu");
         const dropdown = document.getElementById("nav-menu-dropdown");
         if (!btn || !dropdown) return;
 
-        // Buka / tutup menu
+        function tutupMenu() {
+          dropdown.setAttribute("hidden", "");
+          btn.classList.remove("open");
+        }
+
+        function bukaSection(id) {
+          // Animasi: lepas active dulu, lalu pasang lagi
+          document.querySelectorAll(".panel-section").forEach((sec) => {
+            sec.classList.remove("active");
+          });
+
+          // Highlight item menu
+          dropdown.querySelectorAll(".nav-menu-item").forEach((item) => {
+            item.classList.toggle("active", item.dataset.section === id);
+          });
+
+          // Trigger ulang animasi
+          requestAnimationFrame(() => {
+            const target = document.getElementById(id);
+            if (target) {
+              // reset animasi
+              target.style.animation = "none";
+              target.classList.add("active");
+              void target.offsetWidth; // reflow
+              target.style.animation = "";
+            }
+          });
+
+          tutupMenu();
+        }
+
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
-          const buka = dropdown.hasAttribute("hidden");
-          if (buka) {
+          if (dropdown.hasAttribute("hidden")) {
             dropdown.removeAttribute("hidden");
             btn.classList.add("open");
           } else {
-            dropdown.setAttribute("hidden", "");
-            btn.classList.remove("open");
+            tutupMenu();
           }
         });
 
-        // Klik item → pindah section + tutup menu
         dropdown.querySelectorAll(".nav-menu-item").forEach((item) => {
           item.addEventListener("click", () => {
-            const id = item.dataset.section;
-
-            document.querySelectorAll(".sidebar-btn").forEach((b) => {
-              b.classList.toggle("active", b.dataset.section === id);
-            });
-            document.querySelectorAll(".panel-section").forEach((sec) => {
-              sec.classList.toggle("active", sec.id === id);
-            });
-
-            dropdown.setAttribute("hidden", "");
-            btn.classList.remove("open");
+            bukaSection(item.dataset.section);
           });
         });
 
-        // Klik di luar → tutup
         document.addEventListener("click", (e) => {
           if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.setAttribute("hidden", "");
-            btn.classList.remove("open");
+            tutupMenu();
           }
         });
       })();
