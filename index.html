@@ -1003,7 +1003,9 @@
         cursor: pointer;
         font-size: 20px;
         line-height: 1;
-        transition: border-color 0.15s, background 0.15s;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
       }
 
       .nav-menu-btn:hover,
@@ -1033,7 +1035,7 @@
         flex-direction: column;
         gap: 2px;
         transform-origin: top left;
-        animation: menuIn 0.18s ease;
+        animation: menuIn 0.3s ease;
       }
 
       .nav-menu-dropdown[hidden] {
@@ -1154,25 +1156,50 @@
         <div class="dashboard-top">
           <!-- Tombol hamburger -->
           <div class="nav-menu-wrap">
-            <button type="button" class="nav-menu-btn" id="btn-nav-menu" title="Menu">
+            <button
+              type="button"
+              class="nav-menu-btn"
+              id="btn-nav-menu"
+              title="Menu"
+            >
               <span class="hamburger-icon">☰</span>
             </button>
 
             <!-- Dropdown menu -->
             <div class="nav-menu-dropdown" id="nav-menu-dropdown" hidden>
-              <button type="button" class="nav-menu-item" data-section="section-transaksi">
+              <button
+                type="button"
+                class="nav-menu-item"
+                data-section="section-transaksi"
+              >
                 <span>📊</span> Transaksi
               </button>
-              <button type="button" class="nav-menu-item" data-section="section-autodebit">
+              <button
+                type="button"
+                class="nav-menu-item"
+                data-section="section-autodebit"
+              >
                 <span>🔄</span> Autodebit
               </button>
-              <button type="button" class="nav-menu-item" data-section="section-plan">
+              <button
+                type="button"
+                class="nav-menu-item"
+                data-section="section-plan"
+              >
                 <span>📋</span> Financial Plan
               </button>
-              <button type="button" class="nav-menu-item" data-section="section-history">
+              <button
+                type="button"
+                class="nav-menu-item"
+                data-section="section-history"
+              >
                 <span>📜</span> History
               </button>
-              <button type="button" class="nav-menu-item" data-section="section-wallet">
+              <button
+                type="button"
+                class="nav-menu-item"
+                data-section="section-wallet"
+              >
                 <span>👛</span> Wallet
               </button>
             </div>
@@ -1180,72 +1207,73 @@
 
           <!-- 3 kartu saldo -->
           <section class="dashboard">
-          <div class="stat-card balance">
-            <span class="icon">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
-                <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
-                <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
-              </svg>
-            </span>
-            <div>
-              <p class="label">Total Saldo Saat Ini</p>
-              <p class="value" id="stat-balance">Rp 0</p>
+            <div class="stat-card balance">
+              <span class="icon">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                  <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                </svg>
+              </span>
+              <div>
+                <p class="label">Total Saldo Saat Ini</p>
+                <p class="value" id="stat-balance">Rp 0</p>
+              </div>
             </div>
-          </div>
-          <div class="stat-card income">
-            <span class="icon">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M12 19V5"></path>
-                <path d="m5 12 7-7 7 7"></path>
-              </svg>
-            </span>
-            <div>
-              <p class="label">Total Pemasukan</p>
-              <p class="value" id="stat-income">Rp 0</p>
+            <div class="stat-card income">
+              <span class="icon">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 19V5"></path>
+                  <path d="m5 12 7-7 7 7"></path>
+                </svg>
+              </span>
+              <div>
+                <p class="label">Total Pemasukan</p>
+                <p class="value" id="stat-income">Rp 0</p>
+              </div>
             </div>
-          </div>
-          <div class="stat-card expense">
-            <span class="icon">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M12 5v14"></path>
-                <path d="m19 12-7 7-7-7"></path>
-              </svg>
-            </span>
-            <div>
-              <p class="label">Total Pengeluaran</p>
-              <p class="value" id="stat-expense">Rp 0</p>
+            <div class="stat-card expense">
+              <span class="icon">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 5v14"></path>
+                  <path d="m19 12-7 7-7-7"></path>
+                </svg>
+              </span>
+              <div>
+                <p class="label">Total Pengeluaran</p>
+                <p class="value" id="stat-expense">Rp 0</p>
+              </div>
             </div>
-          </div>
-        </section>
-        </div><!-- /.dashboard-top -->
+          </section>
+        </div>
+        <!-- /.dashboard-top -->
       </div>
 
       <div class="app-body">
@@ -4027,8 +4055,6 @@
           document.documentElement.removeAttribute("data-theme");
         }
       }
-
-
 
       document.getElementById("btn-theme").addEventListener("click", () => {
         const sekarangGelap =
