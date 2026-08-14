@@ -1032,6 +1032,109 @@
           font-size: 20px;
         }
       }
+
+      /* =====================================================
+         NAV MENU (HAMBURGER) — di kiri kartu saldo
+         ===================================================== */
+      .dashboard-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        max-width: 1180px;
+        margin: 0 auto 8px;
+        padding: 0 24px;
+      }
+
+      .dashboard-top .dashboard {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .nav-menu-wrap {
+        position: relative;
+        flex-shrink: 0;
+        padding-top: 4px;
+      }
+
+      .nav-menu-btn {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--surface-1);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 20px;
+        line-height: 1;
+        transition: border-color 0.15s, background 0.15s;
+      }
+
+      .nav-menu-btn:hover,
+      .nav-menu-btn.open {
+        border-color: var(--accent);
+        background: rgba(42, 120, 214, 0.1);
+      }
+
+      .hamburger-icon {
+        display: block;
+        font-size: 22px;
+      }
+
+      .nav-menu-dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        min-width: 200px;
+        padding: 8px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--surface-1);
+        box-shadow: var(--shadow);
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .nav-menu-dropdown[hidden] {
+        display: none;
+      }
+
+      .nav-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 11px 12px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 13.5px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .nav-menu-item:hover {
+        background: rgba(42, 120, 214, 0.12);
+        color: var(--accent);
+      }
+
+      .nav-menu-item span {
+        width: 22px;
+        text-align: center;
+      }
+
+      @media (max-width: 860px) {
+        .dashboard-top {
+          padding: 0 12px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1093,7 +1196,35 @@
     <main>
       <!-- ================= DASHBOARD SALDO ================= -->
       <div class="dashboard-wrap">
-        <section class="dashboard">
+        <div class="dashboard-top">
+          <!-- Tombol hamburger -->
+          <div class="nav-menu-wrap">
+            <button type="button" class="nav-menu-btn" id="btn-nav-menu" title="Menu">
+              <span class="hamburger-icon">☰</span>
+            </button>
+
+            <!-- Dropdown menu -->
+            <div class="nav-menu-dropdown" id="nav-menu-dropdown" hidden>
+              <button type="button" class="nav-menu-item" data-section="section-transaksi">
+                <span>📊</span> Transaksi
+              </button>
+              <button type="button" class="nav-menu-item" data-section="section-autodebit">
+                <span>🔄</span> Autodebit
+              </button>
+              <button type="button" class="nav-menu-item" data-section="section-plan">
+                <span>📋</span> Financial Plan
+              </button>
+              <button type="button" class="nav-menu-item" data-section="section-history">
+                <span>📜</span> History
+              </button>
+              <button type="button" class="nav-menu-item" data-section="section-wallet">
+                <span>👛</span> Wallet
+              </button>
+            </div>
+          </div>
+
+          <!-- 3 kartu saldo -->
+          <section class="dashboard">
           <div class="stat-card balance">
             <span class="icon">
               <svg
@@ -1159,6 +1290,7 @@
             </div>
           </div>
         </section>
+        </div><!-- /.dashboard-top -->
       </div>
 
       <div class="app-body">
@@ -4521,6 +4653,52 @@
             .catch((err) => console.warn("SW gagal:", err));
         });
       }
+      /* =========================================================
+                                    NAV MENU (HAMBURGER) — buka/tutup + navigasi
+                                    ========================================================= */
+      (function initNavMenu() {
+        const btn = document.getElementById("btn-nav-menu");
+        const dropdown = document.getElementById("nav-menu-dropdown");
+        if (!btn || !dropdown) return;
+
+        // Buka / tutup menu
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const buka = dropdown.hasAttribute("hidden");
+          if (buka) {
+            dropdown.removeAttribute("hidden");
+            btn.classList.add("open");
+          } else {
+            dropdown.setAttribute("hidden", "");
+            btn.classList.remove("open");
+          }
+        });
+
+        // Klik item → pindah section + tutup menu
+        dropdown.querySelectorAll(".nav-menu-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            const id = item.dataset.section;
+
+            document.querySelectorAll(".sidebar-btn").forEach((b) => {
+              b.classList.toggle("active", b.dataset.section === id);
+            });
+            document.querySelectorAll(".panel-section").forEach((sec) => {
+              sec.classList.toggle("active", sec.id === id);
+            });
+
+            dropdown.setAttribute("hidden", "");
+            btn.classList.remove("open");
+          });
+        });
+
+        // Klik di luar → tutup
+        document.addEventListener("click", (e) => {
+          if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.setAttribute("hidden", "");
+            btn.classList.remove("open");
+          }
+        });
+      })();
     </script>
   </body>
 </html>
