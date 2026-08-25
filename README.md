@@ -1,28 +1,39 @@
-# SaveMoney - Pencatatan Keuangan Pribadi
+# SMoney — Personal Finance Management
 
-## Menjalankan aplikasi
+Aplikasi manajemen keuangan pribadi modern, aman, dan responsif.
 
-```bash
-python -m venv venv
+## Tech Stack
+
+- **Backend**: Node.js, Express, SQLite (`better-sqlite3`), JWT, bcryptjs
+- **Frontend**: React 18, Vite, Tailwind CSS, Chart.js, jsPDF
+
+## Struktur Proyek
+
+```
+project-Perbankan/
+├── backend/          # REST API & Database SQLite
+│   ├── data/         # File database SQLite (smoney.db)
+│   ├── src/          # Service layer OOP, routes, middleware
+│   └── package.json
+└── frontend/         # React SPA (Vite + Tailwind)
+    ├── src/          # Komponen, halaman, konteks auth
+    └── package.json
 ```
 
-Windows:
+## Cara Menjalankan
 
+### 1. Backend Server
 ```bash
-venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
+cd backend
+npm install
+node src/index.js
+# Berjalan di http://localhost:3000
 ```
 
-Linux/macOS:
-
+### 2. Frontend Client
 ```bash
-source venv/bin/activate
-pip install -r requirements.txt
-python app.py
+cd frontend
+npm install
+npm run dev
+# Berjalan di http://localhost:5173
 ```
-
-Buka `http://127.0.0.1:5000`.
-
-Database `bank.db` otomatis dibuat saat aplikasi pertama kali dijalankan.
-Untuk produksi, ubah `SECRET_KEY`, matikan debug, dan gunakan HTTPS.
